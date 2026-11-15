@@ -891,7 +891,8 @@ function photoGlyph(box, x) {
   const px = Math.min(100, Math.max(0, (fx * z - .5) / (z - 1) * 100));
   const py = Math.min(100, Math.max(0, (fy * zh - .5) / (zh - 1) * 100));
   box.classList.add("photo");
-  box.style.backgroundImage = "url(\"simboli/" + encodeURI(ph.file) + "\")";
+  box.style.backgroundImage = "url(\"" + (ph.url || "simboli/" + encodeURI(ph.file)) + "\")";
+  if (ph.card) box.title = "Esempio: " + ph.card;
   box.style.backgroundSize = z * 100 + "% auto";
   box.style.backgroundPosition = px.toFixed(1) + "% " + py.toFixed(1) + "%";
 }
@@ -908,7 +909,14 @@ fetch("espansioni.json").then(r => r.ok ? r.json() : []).then(list => {
   renderSetPick();
 }).catch(() => {});
 fetch("simboli/simboli.json").then(r => r.ok ? r.json() : {}).then(map => {
-  for (const [id, ph] of Object.entries(map || {})) if (STAMP.has(id) && ph && typeof ph.file === "string" && !/[\/\\]|\.\./.test(ph.file)) PHOTO[id] = ph;
+  /* foto locali (solo nome del file) o scansioni ufficiali dai siti già usati per le carte */
+  const okFile = f => typeof f === "string" && !/[\/\\]|\.\./.test(f);
+  const okUrl = u => typeof u === "string" && /^https:\/\/(assets\.tcgdex\.net|images\.pokemontcg\.io)\/[\w.\/-]+$/.test(u);
+  for (const [id, ph] of Object.entries(map || {})) {
+    if (!STAMP.has(id) || !ph) continue;
+    if (okUrl(ph.url)) PHOTO[id] = {...ph, file: undefined};
+    else if (okFile(ph.file)) PHOTO[id] = {...ph, url: undefined};
+  }
   if (!menu.hidden) renderMenu();
 }).catch(() => {});
 memory = loadHistory();

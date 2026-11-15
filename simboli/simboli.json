@@ -1,6 +1,15 @@
 {
-  "trick":  {"file": "zucca.png",        "x": 84, "y": 44},
-  "prize":  {"file": "play-pokemon.png", "x": 10, "y": 43},
-  "snow":   {"file": "fiocco.png",       "x": 87, "y": 39},
-  "promo":  {"file": "fiocco.png",       "x": 8, "y": 94, "zoom": 5}
+  "trick":    {"file": "zucca.png",        "x": 84, "y": 44},
+  "prize":    {"file": "play-pokemon.png", "x": 10, "y": 43},
+  "snow":     {"url": "https://assets.tcgdex.net/en/swsh/swshp/SWSH153/high.webp", "card": "Pikachu SWSH153", "x": 87, "y": 40},
+  "first":    {"url": "https://assets.tcgdex.net/en/base/base1/4/high.webp",       "card": "Charizard 4/102 Set Base", "x": 8, "y": 56, "zoom": 5},
+  "25th":     {"url": "https://assets.tcgdex.net/en/swsh/cel25/1/high.webp",       "card": "Ho-Oh 1/25 Celebrazioni", "x": 86, "y": 45, "zoom": 5},
+  "promo":    {"url": "https://assets.tcgdex.net/en/sv/svp/001/high.webp",         "card": "Sprigatito SVP 001", "x": 24, "y": 95.5, "zoom": 6},
+  "common":   {"url": "https://assets.tcgdex.net/en/sv/sv02/050/high.webp",        "card": "Quaxly 050/193", "x": 31, "y": 95.3, "zoom": 7},
+  "uncommon": {"url": "https://assets.tcgdex.net/en/sv/sv02/002/high.webp",        "card": "Skiploom 002/193", "x": 31, "y": 95.3, "zoom": 7},
+  "rare":     {"url": "https://assets.tcgdex.net/en/sv/sv02/003/high.webp",        "card": "Jumpluff 003/193", "x": 31, "y": 95.3, "zoom": 7},
+  "double":   {"url": "https://assets.tcgdex.net/en/sv/sv02/015/high.webp",        "card": "Meowscarada ex 015/193", "x": 30, "y": 95.3, "zoom": 7},
+  "ultra":    {"url": "https://assets.tcgdex.net/en/sv/sv02/231/high.webp",        "card": "Meowscarada ex 231/193", "x": 31, "y": 95.3, "zoom": 7},
+  "illus":    {"url": "https://assets.tcgdex.net/en/sv/sv02/194/high.webp",        "card": "Heracross 194/193", "x": 31, "y": 95.3, "zoom": 7},
+  "secret":   {"url": "https://assets.tcgdex.net/en/sv/sv02/271/high.webp",        "card": "Meowscarada ex 271/193", "x": 32, "y": 95, "zoom": 7}
 }

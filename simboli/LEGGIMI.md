@@ -3,7 +3,22 @@
 Le voci del menu "+ simbolo", "+ rarità" e "+ sagoma" mostrano la foto di una carta vera,
 ingrandita sul punto dov'è il simbolo. Se per un simbolo non c'è una foto, resta l'icona disegnata.
 
-## Aggiungere una foto
+La foto può essere:
+- una **scansione ufficiale** già online (TCGdex o images.pokemontcg.io), indicata con `url`: non serve scaricare niente;
+- una **foto tua** salvata in questa cartella, indicata con `file`.
+
+## Usare una scansione ufficiale
+
+Trova la carta su TCGdex (es. `https://api.tcgdex.net/v2/en/cards/swshp-SWSH153`), prendi il campo `image`
+e aggiungi `/high.webp`:
+
+```json
+"snow": {"url": "https://assets.tcgdex.net/en/swsh/swshp/SWSH153/high.webp", "card": "Pikachu SWSH153", "x": 87, "y": 40}
+```
+
+`card` è facoltativo: compare come suggerimento passando sopra la foto.
+
+## Aggiungere una foto tua
 
 1. Metti la foto di una carta intera, dritta e senza bordi intorno, in questa cartella (`.png`, `.jpg` o `.webp`).
 2. Aggiungi una riga a `simboli.json` con il nome del simbolo, il file e il punto dove si trova:
