@@ -5,7 +5,7 @@ Pagina di ricerca sul catalogo carte [pokemon-catalog](https://github.com/claudi
 Una sola schermata, quattro zone:
 
 1. **Ricerca testuale**: scrivi quello che sai della carta (`charizard 4/102 base1 holo`).
-2. **Anatomia della carta**: gli stessi dati, compilabili nei campi dove si trovano sulla carta. Testo e campi restano allineati. Due pulsanti + agli angoli bassi dell'illustrazione servono per i simboli in più delle stampe speciali (zucca Trick or Trade, logo Play! Pokémon delle buste premio, fiocco di neve, firma dei mazzi dei Mondiali, STAFF, 1ª Edizione e altri).
+2. **Anatomia della carta**: gli stessi dati, compilabili nei campi dove si trovano sulla carta. Testo e campi restano allineati. Quattro pulsanti + servono per i simboli che distinguono una stampa dalle altre: agli angoli bassi dell'illustrazione gli stampini (zucca Trick or Trade, logo Play! Pokémon delle buste premio, fiocco di neve, firma dei mazzi dei Mondiali, STAFF, 1ª Edizione e altri), accanto al numero il simbolo di rarità e la stella PROMO, nell'angolo della carta la sagoma di Battle Academy e My First Battle.
 3. **Carte che corrispondono**: si aggiorna a ogni modifica.
 4. **Ultimi inserimenti**: le carte aperte, salvate nel browser.
 

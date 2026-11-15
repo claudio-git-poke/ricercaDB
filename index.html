@@ -68,7 +68,7 @@ h2{font-size:1rem;font-weight:600;margin:0}
   box-shadow:0 1px 0 var(--yellow-deep),0 10px 24px -12px rgba(27,36,48,.55);
   display:flex}
 .card-inner{flex:1;background:var(--paper);border-radius:2.5% / 1.8%;padding:4% 4.5%;
-  display:grid;grid-template-rows:auto minmax(0,1.25fr) minmax(0,1fr) auto;gap:3%;min-height:0}
+  display:grid;grid-template-rows:auto minmax(104px,1fr) auto auto auto;gap:10px;min-height:0}
 .field{display:flex;flex-direction:column;gap:2px;min-width:0}
 .field label,.field .lab{font-size:.74rem;font-weight:600;color:var(--ink-soft)}
 .field input,.field select{width:100%;min-width:0;background:var(--white);border:1.5px solid #b9b08f;
@@ -96,6 +96,10 @@ h2{font-size:1rem;font-weight:600;margin:0}
 .spot:hover{background:var(--white)}
 .spot.on{border-style:solid;background:var(--ink);color:var(--white);font-size:.82rem}
 .card-form{position:relative}
+.corners{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.74rem;font-weight:600;color:var(--ink-soft)}
+.corners label{display:flex;align-items:center;gap:6px}
+.corners .spot{position:static}
+.corners .spot:not(.on){color:var(--ink)}
 .stamp-menu{position:absolute;inset:20% 6% 6% 6%;z-index:5;background:var(--white);border:2px solid var(--ink);border-radius:10px;
   display:flex;flex-direction:column;box-shadow:0 12px 28px -10px rgba(27,36,48,.7);overflow:hidden}
 .stamp-menu[hidden]{display:none}
@@ -108,7 +112,7 @@ h2{font-size:1rem;font-weight:600;margin:0}
 .stamp-menu .glyph{display:grid;place-items:center;height:30px;border:1.5px solid currentColor;border-radius:999px;font-size:.72rem;font-weight:700}
 .stamp-menu small{display:block;opacity:.75;font-size:.78rem;line-height:1.2}
 .textarea-zone{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-height:0;overflow:hidden}
-.lines{flex:1;min-height:8px;opacity:.5;
+.lines{flex:1;min-height:14px;opacity:.5;
   background:repeating-linear-gradient(180deg,#b9b08f 0 2px,transparent 2px 14px)}
 .foot{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px;align-items:end}
 .numrow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px;align-items:center}
@@ -180,7 +184,7 @@ dialog::backdrop{background:rgba(27,36,48,.6)}
 
   <!-- 2) anatomia della carta -->
   <section class="zone-anatomy" aria-label="Anatomia della carta">
-    <p class="anatomy-hint">Oppure compila i campi dove li trovi sulla carta. Se vedi un simbolo in più, premi il + in quel punto.</p>
+    <p class="anatomy-hint">Oppure compila i campi dove li trovi sulla carta. Premi un + dove vedi un simbolo.</p>
     <form class="card-form" id="form" autocomplete="off" onsubmit="return false">
       <div class="card-inner">
         <div class="field f-name">
@@ -221,6 +225,11 @@ dialog::backdrop{background:rgba(27,36,48,.6)}
               <input id="f-den" name="den" aria-label="Totale dell'espansione" placeholder="102" inputmode="numeric">
             </div>
           </div>
+        </div>
+
+        <div class="corners">
+          <label><button type="button" class="spot" data-spot="cl" aria-haspopup="true"></button><span>Simbolo di rarità</span></label>
+          <label><span>Sagoma nell'angolo</span><button type="button" class="spot" data-spot="cr" aria-haspopup="true"></button></label>
         </div>
       </div>
       <div class="stamp-menu" id="stampmenu" role="dialog" aria-label="Simbolo in più sulla carta" hidden></div>
@@ -286,35 +295,75 @@ const FINISH_OUT = {holo:"holo", reverse:"reverse", normal:"normale"};
 /* Simboli in più (stampini) delle stampe speciali. spots: dove compaiono rispetto all'illustrazione
    (bl = in basso a sinistra, br = in basso a destra). tags: come il catalogo li registra, in inglese e in italiano. */
 const STAMPS = [
+  /* --- angoli dell'illustrazione --- */
   {id:"trick", spots:["br"], glyph:"🎃", label:"Zucca", note:"Trick or Trade (BOO), le bustine di Halloween",
-   word:"boo", match:/^(boo\d*|zucca)$/, tags:["family:trick-or-trade","stamp:trick-or-trade"]},
+   word:"boo", match:/^(?:boo\d*|zucca)$/, tags:["family:trick-or-trade","stamp:trick-or-trade"]},
   {id:"snow", spots:["br"], glyph:"❄️", label:"Fiocco di neve", note:"Calendario delle feste",
-   word:"fiocco", match:/^(fiocco|snowflake)$/, tags:["family:holiday-calendar","stamp:snowflake","stamp:countdown-calendar"]},
+   word:"fiocco", match:/^(?:fiocco|snowflake)$/, tags:["family:holiday-calendar","stamp:snowflake","stamp:countdown-calendar"]},
   {id:"prize", spots:["bl","br"], glyph:"Play!", label:"Logo Play! Pokémon", note:"Buste premio dei tornei (PPS)",
    word:"pps", match:/^pps\d*$/, tags:["family:prize-pack","stamp:player-rewards-program"]},
   {id:"wcd", spots:["br"], glyph:"✍️", label:"Firma di un giocatore", note:"Mazzi dei Mondiali (WCD): bordo argento e dorso diverso",
-   word:"wcd", match:/^wcd\d*$/, tags:["family:world-championships"]},
+   word:"wcd", match:/^wcd(\d{2})?$/, tags:["family:world-championships"], release: y => "world-championships-20" + y},
+  {id:"mfbball", spots:["br"], glyph:"◓", label:"Etichetta con Poké Ball", note:"My First Battle: primo Pokémon ed Energia iniziale, bordo blu",
+   word:"primopokemon", match:/^primopokemon$/, tags:["stamp:pokeball"]},
   {id:"first", spots:["bl"], glyph:"1ª", label:"1ª Edizione", note:"Cerchietto nero con un 1",
-   word:"1ed", match:/^1(ed|st)$/, tags:["stamp:1st-edition","stamp:1a Edizione"]},
+   word:"1ed", match:/^1(?:ed|st)$/, tags:["stamp:1st-edition","stamp:1a Edizione"]},
   {id:"staff", spots:["br"], glyph:"STAFF", label:"Scritta STAFF", note:"Per chi organizza tornei e prerelease",
    word:"staff", match:/^staff$/, tags:["stamp:staff","stamp:Staff"]},
   {id:"prerelease", spots:["br"], glyph:"Pre", label:"Scritta Prerelease", note:"Tornei di anteprima di un'espansione",
    word:"prerelease", match:/^pre-?release$/, tags:["family:prerelease","stamp:pre-release","stamp:Pre-release"]},
   {id:"winner", spots:["br"], glyph:"WIN", label:"Scritta WINNER", note:"Premi della Lega e dei tornei",
    word:"winner", match:/^winner$/, tags:["stamp:winner"]},
+  {id:"champs", spots:["br"], glyph:"Camp.", label:"Nome di un campionato", note:"Regional, National, State o City Championships",
+   word:"campionato", match:/^(?:campionato|championships?)$/,
+   tags:["stamp:regional-championships","stamp:national-championships","stamp:state-championships","stamp:city-championships","stamp:international-championships"]},
   {id:"setlogo", spots:["br"], glyph:"Logo", label:"Logo di un'espansione", note:"Promo di blister e collezioni",
    word:"logoset", match:/^logoset$/, tags:["stamp:set-logo","stamp:Logo set"]},
   {id:"pcenter", spots:["br"], glyph:"PC", label:"Logo Pokémon Center", note:"Prodotti esclusivi del Pokémon Center",
    word:"pokemoncenter", match:/^pok[eé]moncenter$/, tags:["family:pokemon-center","stamp:pokemon-center"]},
   {id:"league", spots:["br"], glyph:"Lega", label:"Simbolo della Lega Pokémon", note:"Promo distribuite nelle Leghe",
-   word:"lega", match:/^(lega|league)$/, tags:["family:league","stamp:lega-poke-ball"]},
+   word:"lega", match:/^(?:lega|league)$/, tags:["family:league","stamp:lega-poke-ball","stamp:poke-ball-league","stamp:ultra-ball-league","stamp:master-ball-league"]},
+  {id:"professor", spots:["br"], glyph:"Prof", label:"Scritta Pokémon Professor", note:"Programma Professor",
+   word:"professorprogram", match:/^professorprogram$/, tags:["stamp:professor-program","stamp:Programma Professore"]},
   {id:"25th", spots:["br"], glyph:"25", label:"Logo 25° anniversario", note:"Celebrations e ristampe del 2021",
-   word:"25th", match:/^25(th|°)$/, tags:["stamp:25th-celebration","stamp:25° Anniversario"]},
+   word:"25th", match:/^25(?:th|°)$/, tags:["stamp:25th-celebration","stamp:25° Anniversario"]},
+  {id:"pokeday", spots:["br"], glyph:"Day", label:"Logo Pokémon Day", note:"Promo del 27 febbraio",
+   word:"pokemonday", match:/^pok[eé]monday$/, tags:["stamp:pokemon-day"]},
+  {id:"mcd", spots:["br"], glyph:"M", label:"Logo McDonald's", note:"Promo degli Happy Meal",
+   word:"mcdonalds", match:/^mcdonald'?s$/, tags:["stamp:mcdonalds"]},
   {id:"store", spots:["br"], glyph:"Shop", label:"GameStop o EB Games", note:"Promo dei negozi",
-   word:"gamestop", match:/^(gamestop|ebgames)$/, tags:["stamp:gamestop","stamp:eb-games","stamp:GameStop","stamp:EB Games"]},
+   word:"gamestop", match:/^(?:gamestop|ebgames)$/, tags:["stamp:gamestop","stamp:eb-games","stamp:GameStop","stamp:EB Games"]},
+
+  /* --- angolo in basso a destra della carta --- */
+  {id:"ba", spots:["cr"], glyph:"BA", label:"Sagoma colorata di un Pokémon", note:"Battle Academy (BA), a volte con un numero accanto",
+   word:"ba", match:/^ba(\d{2})?$/, tags:["family:battle-academy"], release: y => "battle-academy-20" + y},
+  {id:"mfb", spots:["cr","br"], glyph:"MFB", label:"Piccolo Pokémon del mazzo", note:"My First Battle (MFB): carta senza numero di collezione",
+   word:"mfb", match:/^mfb$/, tags:["family:my-first-battle"]},
+
+  /* --- simbolo di rarità, accanto al numero --- */
+  {id:"promo", spots:["cl"], group:"rarity", glyph:"★ᴾ", label:"Stella nera con scritto PROMO", note:"Black Star Promo: carta fuori dalle espansioni",
+   word:"promo", match:/^promo$/, fts:"(svp|swshp|smp|xyp|bwp|basep|np|dpp|hgssp|mep|miscp)"},
+  {id:"common", spots:["cl"], group:"rarity", glyph:"●", label:"Cerchio", note:"Comune",
+   word:"comune", match:/^comune$/, tags:["rarity:common","rarity:comune"]},
+  {id:"uncommon", spots:["cl"], group:"rarity", glyph:"◆", label:"Rombo", note:"Non comune",
+   word:"noncomune", match:/^noncomune$/, tags:["rarity:uncommon","rarity:non-comune"]},
+  {id:"rare", spots:["cl"], group:"rarity", glyph:"★", label:"Una stella nera", note:"Rara",
+   word:"rara", match:/^rara$/, tags:["rarity:rare","rarity:holo-rare","rarity:rara"]},
+  {id:"double", spots:["cl"], group:"rarity", glyph:"★★", label:"Due stelle nere", note:"Doppia rara",
+   word:"doppiarara", match:/^doppiarara$/, tags:["rarity:double-rare"]},
+  {id:"ultra", spots:["cl"], group:"rarity", glyph:"☆☆", label:"Due stelle argento", note:"Ultra rara",
+   word:"ultrarara", match:/^ultrarara$/, tags:["rarity:ultra-rare","rarity:ultrarara"]},
+  {id:"illus", spots:["cl"], group:"rarity", glyph:"✦", label:"Una o due stelle oro", note:"Rara illustrazione, anche speciale",
+   word:"illustrazione", match:/^illustrazione$/, tags:["rarity:illustration-rare","rarity:special-illustration-rare"]},
+  {id:"secret", spots:["cl"], group:"rarity", glyph:"✦✦✦", label:"Tre stelle oro o numero oltre il totale", note:"Rara segreta o iper rara",
+   word:"segreta", match:/^segreta$/, tags:["rarity:secret-rare","rarity:segreto-rara","rarity:hyper-rare","rarity:mega-hyper-rare"]},
 ];
-const SPOT_NAME = {bl: "in basso a sinistra dell'illustrazione", br: "in basso a destra dell'illustrazione"};
-let stamps = new Set();
+const STAMP = new Map(STAMPS.map(x => [x.id, x]));
+const SPOT_NAME = {bl: "in basso a sinistra dell'illustrazione", br: "in basso a destra dell'illustrazione",
+  cl: "di rarità, accanto al numero", cr: "nell'angolo in basso a destra della carta"};
+const SPOT_ASK = {bl: "Che simbolo vedi qui?", br: "Che simbolo vedi qui?", cl: "Che simbolo c'è accanto al numero?", cr: "Cosa vedi nell'angolo?"};
+/* simboli scelti: id -> anno a due cifre, se indicato (ba24, wcd19) */
+let stamps = new Map();
 
 /* ---------- elementi ---------- */
 const $ = id => document.getElementById(id);
@@ -335,14 +384,14 @@ function readFields() {
     name: F.name.value.trim(), set: F.set.value.trim(),
     num: F.num.value.trim(), den: F.den.value.trim(),
     lang: F.lang.value, finish: form.elements.finish.value,
-    stamps: STAMPS.filter(x => stamps.has(x.id)).map(x => x.id),
+    stamps: STAMPS.filter(x => stamps.has(x.id)).map(x => ({id: x.id, yr: stamps.get(x.id)})),
   };
 }
 function writeFields(s) {
   F.name.value = s.name; F.set.value = s.set; F.num.value = s.num; F.den.value = s.den;
   F.lang.value = s.lang;
   for (const r of form.elements.finish) r.checked = r.value === s.finish;
-  stamps = new Set(s.stamps); renderSpots();
+  stamps = new Map(s.stamps.map(x => [x.id, x.yr])); renderSpots();
   markFilled();
 }
 function markFilled() {
@@ -359,7 +408,12 @@ function parseText(text) {
   for (const raw of rest.split(/\s+/).filter(Boolean)) {
     const t = raw.toLowerCase();
     const stamp = STAMPS.find(x => x.match.test(t));
-    if (stamp) { if (!s.stamps.includes(stamp.id)) s.stamps.push(stamp.id); continue; }
+    if (stamp) {
+      const yr = (stamp.release && t.match(stamp.match)[1]) || "";
+      if (stamp.group) s.stamps = s.stamps.filter(x => STAMP.get(x.id).group !== stamp.group);
+      if (!s.stamps.some(x => x.id === stamp.id)) s.stamps.push({id: stamp.id, yr});
+      continue;
+    }
     if (!s.lang && LANG_WORD.has(t)) { s.lang = LANG_WORD.get(t); continue; }
     if (!s.finish && FINISH_WORD.has(t)) { s.finish = FINISH_WORD.get(t); continue; }
     if (!s.num && /^\d{1,3}[a-z]?$/i.test(t)) { s.num = raw; continue; }
@@ -373,7 +427,7 @@ function parseText(text) {
 function composeText(s) {
   const lang = LANGS.find(l => l[0] === s.lang);
   return [s.name, s.set, s.num && s.den ? s.num + "/" + s.den : s.num || (s.den && "/" + s.den),
-    lang && lang[2], FINISH_OUT[s.finish], ...s.stamps.map(id => STAMPS.find(x => x.id === id).word)].filter(Boolean).join(" ");
+    lang && lang[2], FINISH_OUT[s.finish], ...s.stamps.map(x => STAMP.get(x.id).word + x.yr)].filter(Boolean).join(" ");
 }
 
 /* ---------- interrogazione ---------- */
@@ -381,7 +435,11 @@ function buildQuery(s) {
   const p = new URLSearchParams();
   p.set("select", "entry_key,card_id,name,set_code,language,collector_number,denominator,label,image_url,verification,cardmarket_url,source_url,set_name:source_payload->set->>name,rarity:source_payload->>rarity,cards(image_url,link_cardmarket)");
   const tokens = norm(s.name + " " + s.set).split(" ").filter(Boolean).slice(0, 8);
-  if (tokens.length) p.set("search_vector", "fts(simple)." + tokens.map(t => t + ":*").join("&"));
+  const chosen = s.stamps.map(x => ({...STAMP.get(x.id), yr: x.yr}));
+  const words = tokens.map(t => t + ":*").concat(chosen.filter(x => x.fts).map(x => x.fts));
+  if (words.length) p.set("search_vector", "fts(simple)." + words.join("&"));
+  const dated = chosen.find(x => x.release && x.yr);
+  if (dated) p.set("release_code", "eq." + dated.release(dated.yr));
   const num = cleanNum(s.num);
   if (num) p.set("collector_number", "eq." + num);
   const den = s.den.replace(/\D/g, "");
@@ -390,10 +448,10 @@ function buildQuery(s) {
     p.set("denominator", "in.(" + [...new Set([den, bare, bare.padStart(3, "0")])].join(",") + ")");
   }
   if (s.lang) p.set("language", s.lang === "INT" ? "in.(INT,EN)" : "eq." + s.lang);
-  const tagSets = s.stamps.map(id => STAMPS.find(x => x.id === id).tags);
+  const tagSets = chosen.filter(x => x.tags).map(x => x.tags);
   if (s.finish) tagSets.push(FINISH_TAGS[s.finish]);
   if (tagSets.length) p.set("and", "(" + tagSets.map(tags => "tags.ov.{" + tags.map(t => '"' + t + '"').join(",") + "}").join(",") + ")");
-  const empty = !tokens.length && !num && !den && !s.lang && !tagSets.length;
+  const empty = !words.length && !num && !den && !s.lang && !tagSets.length;
   p.set("order", "cards(image_url).asc.nullslast,card_id.asc");
   p.set("limit", PAGE);
   return {params: p, empty, tokens};
@@ -572,10 +630,10 @@ function renderSpots() {
   for (const b of form.querySelectorAll(".spot")) {
     const here = STAMPS.filter(x => stamps.has(x.id) && x.spots.includes(b.dataset.spot));
     b.classList.toggle("on", here.length > 0);
-    b.textContent = here.length ? here.map(x => x.glyph).join(" ") : "+";
+    b.textContent = here.length ? here.map(x => x.glyph + (stamps.get(x.id) || "")).join(" ") : "+";
     b.setAttribute("aria-label", here.length
       ? "Simbolo " + SPOT_NAME[b.dataset.spot] + ": " + here.map(x => x.label).join(", ") + ". Cambia"
-      : "Aggiungi un simbolo " + SPOT_NAME[b.dataset.spot]);
+      : "Scegli il simbolo " + SPOT_NAME[b.dataset.spot]);
     b.title = b.getAttribute("aria-label");
   }
   if (!menu.hidden) renderMenu();
@@ -584,7 +642,7 @@ function renderMenu() {
   const head = el("header"), list = el("ul");
   const done = el("button", "btn primary", "Fatto"); done.type = "button";
   done.addEventListener("click", closeMenu);
-  head.append(el("span", "", "Che simbolo vedi qui?"), done);
+  head.append(el("span", "", SPOT_ASK[menuSpot]), done);
   for (const x of STAMPS.filter(x => x.spots.includes(menuSpot))) {
     const b = el("button"), text = el("span");
     b.type = "button"; b.dataset.id = x.id;
@@ -592,7 +650,11 @@ function renderMenu() {
     text.append(document.createTextNode(x.label), el("small", "", x.note));
     b.append(el("span", "glyph", x.glyph), text);
     b.addEventListener("click", () => {
-      stamps.has(x.id) ? stamps.delete(x.id) : stamps.add(x.id);
+      if (stamps.has(x.id)) stamps.delete(x.id);
+      else {
+        if (x.group) for (const y of STAMPS) if (y.group === x.group) stamps.delete(y.id);
+        stamps.set(x.id, "");
+      }
       renderSpots(); fieldsChanged();
       menu.querySelector('[data-id="' + x.id + '"]').focus();
     });
