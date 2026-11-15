@@ -80,7 +80,7 @@ h2{font-size:1rem;font-weight:600;margin:0}
   background:
     repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 10px,rgba(255,255,255,0) 10px 22px),
     linear-gradient(160deg,#bcd3e4,#e6d7ee 55%,#f6e7b8);
-  display:flex;flex-direction:column;justify-content:flex-end;padding:6px}
+  display:flex;flex-direction:column;justify-content:flex-start;padding:6px;position:relative}
 .art .lab{background:rgba(248,244,228,.92);align-self:flex-start;padding:1px 6px;border-radius:4px 4px 0 0}
 .chips{display:flex;flex-wrap:wrap;gap:4px;background:rgba(248,244,228,.92);padding:5px;border-radius:0 5px 5px 5px}
 .chips label{position:relative}
@@ -88,6 +88,25 @@ h2{font-size:1rem;font-weight:600;margin:0}
 .chips span{display:block;padding:3px 9px;border:1.5px solid #b9b08f;border-radius:999px;background:var(--white);font-size:.86rem}
 .chips input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--white);font-weight:600}
 .chips input:focus-visible+span{outline:3px solid var(--red);outline-offset:1px}
+/* punti dove può esserci un simbolo in più */
+.spot{position:absolute;bottom:-15px;min-width:32px;height:32px;padding:0 7px;border-radius:999px;z-index:2;
+  border:2px dashed var(--ink);background:var(--paper);font-weight:700;font-size:1rem;line-height:1;white-space:nowrap}
+.spot-bl{left:8px}
+.spot-br{right:8px}
+.spot:hover{background:var(--white)}
+.spot.on{border-style:solid;background:var(--ink);color:var(--white);font-size:.82rem}
+.card-form{position:relative}
+.stamp-menu{position:absolute;inset:20% 6% 6% 6%;z-index:5;background:var(--white);border:2px solid var(--ink);border-radius:10px;
+  display:flex;flex-direction:column;box-shadow:0 12px 28px -10px rgba(27,36,48,.7);overflow:hidden}
+.stamp-menu[hidden]{display:none}
+.stamp-menu header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 8px 6px 12px;font-weight:700}
+.stamp-menu ul{list-style:none;margin:0;padding:0 6px 6px;overflow:auto;flex:1}
+.stamp-menu li button{width:100%;display:grid;grid-template-columns:38px minmax(0,1fr);gap:8px;align-items:center;text-align:left;
+  border:0;background:none;border-radius:8px;padding:6px}
+.stamp-menu li button:hover{background:var(--mat)}
+.stamp-menu li button[aria-pressed=true]{background:var(--ink);color:var(--white)}
+.stamp-menu .glyph{display:grid;place-items:center;height:30px;border:1.5px solid currentColor;border-radius:999px;font-size:.72rem;font-weight:700}
+.stamp-menu small{display:block;opacity:.75;font-size:.78rem;line-height:1.2}
 .textarea-zone{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-height:0;overflow:hidden}
 .lines{flex:1;min-height:8px;opacity:.5;
   background:repeating-linear-gradient(180deg,#b9b08f 0 2px,transparent 2px 14px)}
@@ -161,7 +180,7 @@ dialog::backdrop{background:rgba(27,36,48,.6)}
 
   <!-- 2) anatomia della carta -->
   <section class="zone-anatomy" aria-label="Anatomia della carta">
-    <p class="anatomy-hint">Oppure compila i campi dove li trovi sulla carta.</p>
+    <p class="anatomy-hint">Oppure compila i campi dove li trovi sulla carta. Se vedi un simbolo in più, premi il + in quel punto.</p>
     <form class="card-form" id="form" autocomplete="off" onsubmit="return false">
       <div class="card-inner">
         <div class="field f-name">
@@ -177,6 +196,8 @@ dialog::backdrop{background:rgba(27,36,48,.6)}
             <label><input type="radio" name="finish" value="holo"><span>Holo</span></label>
             <label><input type="radio" name="finish" value="reverse"><span>Reverse</span></label>
           </div>
+          <button type="button" class="spot spot-bl" data-spot="bl" aria-haspopup="true"></button>
+          <button type="button" class="spot spot-br" data-spot="br" aria-haspopup="true"></button>
         </div>
 
         <div class="textarea-zone">
@@ -202,6 +223,7 @@ dialog::backdrop{background:rgba(27,36,48,.6)}
           </div>
         </div>
       </div>
+      <div class="stamp-menu" id="stampmenu" role="dialog" aria-label="Simbolo in più sulla carta" hidden></div>
     </form>
   </section>
 
@@ -261,6 +283,39 @@ const FINISH_TAGS = {
 };
 const FINISH_OUT = {holo:"holo", reverse:"reverse", normal:"normale"};
 
+/* Simboli in più (stampini) delle stampe speciali. spots: dove compaiono rispetto all'illustrazione
+   (bl = in basso a sinistra, br = in basso a destra). tags: come il catalogo li registra, in inglese e in italiano. */
+const STAMPS = [
+  {id:"trick", spots:["br"], glyph:"🎃", label:"Zucca", note:"Trick or Trade (BOO), le bustine di Halloween",
+   word:"boo", match:/^(boo\d*|zucca)$/, tags:["family:trick-or-trade","stamp:trick-or-trade"]},
+  {id:"snow", spots:["br"], glyph:"❄️", label:"Fiocco di neve", note:"Calendario delle feste",
+   word:"fiocco", match:/^(fiocco|snowflake)$/, tags:["family:holiday-calendar","stamp:snowflake","stamp:countdown-calendar"]},
+  {id:"prize", spots:["bl","br"], glyph:"Play!", label:"Logo Play! Pokémon", note:"Buste premio dei tornei (PPS)",
+   word:"pps", match:/^pps\d*$/, tags:["family:prize-pack","stamp:player-rewards-program"]},
+  {id:"wcd", spots:["br"], glyph:"✍️", label:"Firma di un giocatore", note:"Mazzi dei Mondiali (WCD): bordo argento e dorso diverso",
+   word:"wcd", match:/^wcd\d*$/, tags:["family:world-championships"]},
+  {id:"first", spots:["bl"], glyph:"1ª", label:"1ª Edizione", note:"Cerchietto nero con un 1",
+   word:"1ed", match:/^1(ed|st)$/, tags:["stamp:1st-edition","stamp:1a Edizione"]},
+  {id:"staff", spots:["br"], glyph:"STAFF", label:"Scritta STAFF", note:"Per chi organizza tornei e prerelease",
+   word:"staff", match:/^staff$/, tags:["stamp:staff","stamp:Staff"]},
+  {id:"prerelease", spots:["br"], glyph:"Pre", label:"Scritta Prerelease", note:"Tornei di anteprima di un'espansione",
+   word:"prerelease", match:/^pre-?release$/, tags:["family:prerelease","stamp:pre-release","stamp:Pre-release"]},
+  {id:"winner", spots:["br"], glyph:"WIN", label:"Scritta WINNER", note:"Premi della Lega e dei tornei",
+   word:"winner", match:/^winner$/, tags:["stamp:winner"]},
+  {id:"setlogo", spots:["br"], glyph:"Logo", label:"Logo di un'espansione", note:"Promo di blister e collezioni",
+   word:"logoset", match:/^logoset$/, tags:["stamp:set-logo","stamp:Logo set"]},
+  {id:"pcenter", spots:["br"], glyph:"PC", label:"Logo Pokémon Center", note:"Prodotti esclusivi del Pokémon Center",
+   word:"pokemoncenter", match:/^pok[eé]moncenter$/, tags:["family:pokemon-center","stamp:pokemon-center"]},
+  {id:"league", spots:["br"], glyph:"Lega", label:"Simbolo della Lega Pokémon", note:"Promo distribuite nelle Leghe",
+   word:"lega", match:/^(lega|league)$/, tags:["family:league","stamp:lega-poke-ball"]},
+  {id:"25th", spots:["br"], glyph:"25", label:"Logo 25° anniversario", note:"Celebrations e ristampe del 2021",
+   word:"25th", match:/^25(th|°)$/, tags:["stamp:25th-celebration","stamp:25° Anniversario"]},
+  {id:"store", spots:["br"], glyph:"Shop", label:"GameStop o EB Games", note:"Promo dei negozi",
+   word:"gamestop", match:/^(gamestop|ebgames)$/, tags:["stamp:gamestop","stamp:eb-games","stamp:GameStop","stamp:EB Games"]},
+];
+const SPOT_NAME = {bl: "in basso a sinistra dell'illustrazione", br: "in basso a destra dell'illustrazione"};
+let stamps = new Set();
+
 /* ---------- elementi ---------- */
 const $ = id => document.getElementById(id);
 const q = $("q"), form = $("form"), grid = $("grid"), count = $("count"), strip = $("strip"), dlg = $("dlg");
@@ -280,12 +335,14 @@ function readFields() {
     name: F.name.value.trim(), set: F.set.value.trim(),
     num: F.num.value.trim(), den: F.den.value.trim(),
     lang: F.lang.value, finish: form.elements.finish.value,
+    stamps: STAMPS.filter(x => stamps.has(x.id)).map(x => x.id),
   };
 }
 function writeFields(s) {
   F.name.value = s.name; F.set.value = s.set; F.num.value = s.num; F.den.value = s.den;
   F.lang.value = s.lang;
   for (const r of form.elements.finish) r.checked = r.value === s.finish;
+  stamps = new Set(s.stamps); renderSpots();
   markFilled();
 }
 function markFilled() {
@@ -294,13 +351,15 @@ function markFilled() {
 
 /* testo libero -> campi */
 function parseText(text) {
-  const s = {name: "", set: "", num: "", den: "", lang: "", finish: ""};
+  const s = {name: "", set: "", num: "", den: "", lang: "", finish: "", stamps: []};
   let rest = text;
   const slash = rest.match(/([a-z]*\d+[a-z]*)\s*\/\s*(\d+)/i);
   if (slash) { s.num = slash[1]; s.den = slash[2]; rest = rest.replace(slash[0], " "); }
   const name = [], set = [];
   for (const raw of rest.split(/\s+/).filter(Boolean)) {
     const t = raw.toLowerCase();
+    const stamp = STAMPS.find(x => x.match.test(t));
+    if (stamp) { if (!s.stamps.includes(stamp.id)) s.stamps.push(stamp.id); continue; }
     if (!s.lang && LANG_WORD.has(t)) { s.lang = LANG_WORD.get(t); continue; }
     if (!s.finish && FINISH_WORD.has(t)) { s.finish = FINISH_WORD.get(t); continue; }
     if (!s.num && /^\d{1,3}[a-z]?$/i.test(t)) { s.num = raw; continue; }
@@ -314,7 +373,7 @@ function parseText(text) {
 function composeText(s) {
   const lang = LANGS.find(l => l[0] === s.lang);
   return [s.name, s.set, s.num && s.den ? s.num + "/" + s.den : s.num || (s.den && "/" + s.den),
-    lang && lang[2], FINISH_OUT[s.finish]].filter(Boolean).join(" ");
+    lang && lang[2], FINISH_OUT[s.finish], ...s.stamps.map(id => STAMPS.find(x => x.id === id).word)].filter(Boolean).join(" ");
 }
 
 /* ---------- interrogazione ---------- */
@@ -331,8 +390,10 @@ function buildQuery(s) {
     p.set("denominator", "in.(" + [...new Set([den, bare, bare.padStart(3, "0")])].join(",") + ")");
   }
   if (s.lang) p.set("language", s.lang === "INT" ? "in.(INT,EN)" : "eq." + s.lang);
-  if (s.finish) p.set("tags", "ov.{" + FINISH_TAGS[s.finish].join(",") + "}");
-  const empty = !tokens.length && !num && !den && !s.lang && !s.finish;
+  const tagSets = s.stamps.map(id => STAMPS.find(x => x.id === id).tags);
+  if (s.finish) tagSets.push(FINISH_TAGS[s.finish]);
+  if (tagSets.length) p.set("and", "(" + tagSets.map(tags => "tags.ov.{" + tags.map(t => '"' + t + '"').join(",") + "}").join(",") + ")");
+  const empty = !tokens.length && !num && !den && !s.lang && !tagSets.length;
   p.set("order", "cards(image_url).asc.nullslast,card_id.asc");
   p.set("limit", PAGE);
   return {params: p, empty, tokens};
@@ -367,7 +428,7 @@ async function search() {
   if (controller) controller.abort();
   if (empty) {
     count.textContent = ""; count.classList.remove("busy");
-    return showMessage("Inizia da quello che vedi", "Scrivi un nome, un numero come 4/102 o la sigla dell'espansione. Le carte compaiono qui mentre scrivi.");
+    return showMessage("Inizia da quello che vedi", "Scrivi un nome, un numero come 4/102 o la sigla dell'espansione, oppure premi un + sulla carta se vedi un simbolo in più. Le carte compaiono qui mentre scrivi.");
   }
   controller = new AbortController();
   count.classList.add("busy");
@@ -500,10 +561,63 @@ $("clear").addEventListener("click", () => {
 
 /* ---------- collegamento testo <-> anatomia ---------- */
 q.addEventListener("input", () => { writeFields(parseText(q.value)); scheduleSearch(); });
-form.addEventListener("input", () => { q.value = composeText(readFields()); markFilled(); scheduleSearch(); });
-form.addEventListener("change", () => { q.value = composeText(readFields()); markFilled(); scheduleSearch(); });
+function fieldsChanged() { q.value = composeText(readFields()); markFilled(); scheduleSearch(); }
+form.addEventListener("input", fieldsChanged);
+form.addEventListener("change", fieldsChanged);
+
+/* ---------- simboli in più ---------- */
+const menu = $("stampmenu");
+let menuSpot = "";
+function renderSpots() {
+  for (const b of form.querySelectorAll(".spot")) {
+    const here = STAMPS.filter(x => stamps.has(x.id) && x.spots.includes(b.dataset.spot));
+    b.classList.toggle("on", here.length > 0);
+    b.textContent = here.length ? here.map(x => x.glyph).join(" ") : "+";
+    b.setAttribute("aria-label", here.length
+      ? "Simbolo " + SPOT_NAME[b.dataset.spot] + ": " + here.map(x => x.label).join(", ") + ". Cambia"
+      : "Aggiungi un simbolo " + SPOT_NAME[b.dataset.spot]);
+    b.title = b.getAttribute("aria-label");
+  }
+  if (!menu.hidden) renderMenu();
+}
+function renderMenu() {
+  const head = el("header"), list = el("ul");
+  const done = el("button", "btn primary", "Fatto"); done.type = "button";
+  done.addEventListener("click", closeMenu);
+  head.append(el("span", "", "Che simbolo vedi qui?"), done);
+  for (const x of STAMPS.filter(x => x.spots.includes(menuSpot))) {
+    const b = el("button"), text = el("span");
+    b.type = "button"; b.dataset.id = x.id;
+    b.setAttribute("aria-pressed", stamps.has(x.id));
+    text.append(document.createTextNode(x.label), el("small", "", x.note));
+    b.append(el("span", "glyph", x.glyph), text);
+    b.addEventListener("click", () => {
+      stamps.has(x.id) ? stamps.delete(x.id) : stamps.add(x.id);
+      renderSpots(); fieldsChanged();
+      menu.querySelector('[data-id="' + x.id + '"]').focus();
+    });
+    const li = el("li"); li.append(b); list.append(li);
+  }
+  const top = menu.querySelector("ul") ? menu.querySelector("ul").scrollTop : 0;
+  menu.replaceChildren(head, list);
+  list.scrollTop = top;
+}
+function openMenu(spot) { menuSpot = spot; menu.hidden = false; renderMenu(); menu.querySelector("li button").focus(); }
+function closeMenu() {
+  if (menu.hidden) return;
+  menu.hidden = true;
+  form.querySelector('.spot[data-spot="' + menuSpot + '"]').focus();
+}
+for (const b of form.querySelectorAll(".spot")) b.addEventListener("click", e => {
+  e.stopPropagation();
+  !menu.hidden && menuSpot === b.dataset.spot ? closeMenu() : openMenu(b.dataset.spot);
+});
+menu.addEventListener("click", e => e.stopPropagation());
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !menu.hidden) { e.preventDefault(); closeMenu(); } });
+document.addEventListener("click", e => { if (!menu.hidden && !menu.contains(e.target)) { menu.hidden = true; } });
 $("reset").addEventListener("click", () => { q.value = ""; writeFields(parseText("")); search(); q.focus(); });
 
+renderSpots();
 memory = loadHistory();
 renderHistory();
 search();
