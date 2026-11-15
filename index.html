@@ -134,6 +134,40 @@ h2{font-size:1rem;font-weight:600;margin:0}
 .stamp-menu li button[aria-pressed=true] .glyph{background:rgba(255,255,255,.14)}
 .stamp-menu .glyph svg{width:26px;height:26px}
 .stamp-menu small{display:block;opacity:.75;font-size:.78rem}
+/* foto vera del simbolo, ingrandita */
+.stamp-menu li button:has(.photo){grid-template-columns:56px minmax(0,1fr)}
+.stamp-menu .glyph.photo{width:56px;height:56px;border-radius:10px;background-color:var(--mat);background-repeat:no-repeat;
+  box-shadow:inset 0 0 0 1px rgba(27,36,48,.25)}
+.stamp-menu li button[aria-pressed=true] .glyph.photo{box-shadow:0 0 0 2px var(--white)}
+
+/* scelta dell'espansione dal simbolo */
+.set-pick{display:flex;align-items:center;gap:6px;width:100%;min-width:0;height:31px;padding:0 2px;text-align:left;
+  background:transparent;border:0;border-bottom:2px dashed #b3a97f;border-radius:0;font-size:1rem;color:#a79f7f}
+/* il contenuto viene ridisegnato mentre si clicca: il clic deve restare sul pulsante */
+.set-pick>*,.spot>*{pointer-events:none}
+.set-pick:hover{background:rgba(255,255,255,.6)}
+.set-pick.filled{border-bottom:2px solid var(--ink);color:var(--ink);font-weight:700}
+.set-pick span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.set-pick img,.set-sym img{width:22px;height:22px;object-fit:contain;flex:none}
+.set-tools{display:flex;flex-direction:column;gap:6px;padding:0 10px 8px}
+.set-tools input{width:100%;border:2px solid var(--ink);border-radius:999px;padding:6px 12px;font-size:.95rem;outline:none;background:var(--white)}
+.set-tools input:focus{border-color:var(--red)}
+.set-tools .hint{font-size:.78rem;color:var(--ink-soft);margin:0}
+.set-grid{list-style:none;margin:0;padding:0 8px 8px;overflow:auto;flex:1}
+.set-grid h4{margin:10px 4px 4px;font-size:.78rem;color:var(--ink-soft);font-weight:600}
+.set-grid .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:4px}
+.set-grid button{display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;border-radius:9px;padding:7px 3px;
+  font-size:.74rem;line-height:1.15;text-align:center;min-width:0}
+.set-grid button:hover{background:var(--mat)}
+.set-grid button[aria-pressed=true]{background:var(--ink);color:var(--white)}
+.set-grid button b{font-weight:600;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:100%}
+.set-grid button small{opacity:.7}
+.set-sym{display:grid;place-items:center;width:40px;height:34px}
+.set-sym img{width:34px;height:34px}
+.set-sym i{font-style:normal;font-weight:700;font-size:.72rem;border:1.5px solid currentColor;border-radius:6px;padding:2px 4px}
+.set-grid button[aria-pressed=true] .set-sym img{background:var(--white);border-radius:6px}
+.cap .sym{width:14px;height:14px;object-fit:contain;vertical-align:-2px;margin-right:3px}
+.sheet .logo{max-width:150px;max-height:48px;object-fit:contain;display:block;margin-bottom:6px}
 
 /* ---------- 3) anteprima ---------- */
 .zone-results{display:flex;flex-direction:column;background:var(--pocket);border-radius:14px;overflow:hidden}
@@ -235,8 +269,9 @@ dialog::backdrop{background:rgba(27,36,48,.6)}
 
         <div class="foot">
           <div class="field">
-            <label for="f-set">Espansione</label>
-            <input id="f-set" name="set" placeholder="base1">
+            <span class="lab" id="f-set-lab">Espansione</span>
+            <input id="f-set" name="set" type="hidden">
+            <button type="button" class="set-pick" id="setpick" aria-labelledby="f-set-lab setpick" aria-haspopup="true"></button>
           </div>
           <div class="field">
             <span class="lab">Numero</span>
@@ -254,6 +289,14 @@ dialog::backdrop{background:rgba(27,36,48,.6)}
         </div>
       </div>
       <div class="stamp-menu" id="stampmenu" role="dialog" aria-label="Simbolo sulla carta" hidden></div>
+      <div class="stamp-menu" id="setmenu" role="dialog" aria-label="Espansione" hidden>
+        <header><span>Che simbolo ha l'espansione?</span><button type="button" class="btn primary" id="setdone">Fatto</button></header>
+        <div class="set-tools">
+          <input id="setq" type="search" autocomplete="off" placeholder="Cerca per nome, sigla o anno" aria-label="Cerca un'espansione">
+          <p class="hint">Il simbolo sta accanto al numero o sotto l'illustrazione.</p>
+        </div>
+        <div class="set-grid" id="setgrid"></div>
+      </div>
     </form>
   </section>
 
@@ -448,14 +491,14 @@ const cleanNum = s => s.trim().toLowerCase().split("/")[0].replace(/[^a-z0-9]/g,
 
 function readFields() {
   return {
-    name: F.name.value.trim(), set: F.set.value.trim(),
+    name: F.name.value.trim(), set: F.set.value.trim(), setId,
     num: F.num.value.trim(), den: F.den.value.trim(),
     lang: F.lang.value, finish: form.elements.finish.value,
     stamps: STAMPS.filter(x => stamps.has(x.id)).map(x => ({id: x.id, yr: stamps.get(x.id)})),
   };
 }
 function writeFields(s) {
-  F.name.value = s.name; F.set.value = s.set; F.num.value = s.num; F.den.value = s.den;
+  F.name.value = s.name; F.set.value = s.set; setId = s.setId || ""; F.num.value = s.num; F.den.value = s.den;
   F.lang.value = s.lang;
   for (const r of form.elements.finish) r.checked = r.value === s.finish;
   stamps = new Map(s.stamps.map(x => [x.id, x.yr])); renderSpots();
@@ -463,11 +506,12 @@ function writeFields(s) {
 }
 function markFilled() {
   for (const input of Object.values(F)) input.closest(".field").classList.toggle("filled", !!input.value);
+  renderSetPick();
 }
 
 /* testo libero -> campi */
 function parseText(text) {
-  const s = {name: "", set: "", num: "", den: "", lang: "", finish: "", stamps: []};
+  const s = {name: "", set: "", setId: "", num: "", den: "", lang: "", finish: "", stamps: []};
   let rest = text;
   const slash = rest.match(/([a-z]*\d+[a-z]*)\s*\/\s*(\d+)/i);
   if (slash) { s.num = slash[1]; s.den = slash[2]; rest = rest.replace(slash[0], " "); }
@@ -484,16 +528,18 @@ function parseText(text) {
     if (!s.lang && LANG_WORD.has(t)) { s.lang = LANG_WORD.get(t); continue; }
     if (!s.finish && FINISH_WORD.has(t)) { s.finish = FINISH_WORD.get(t); continue; }
     if (!s.num && /^\d{1,3}[a-z]?$/i.test(t)) { s.num = raw; continue; }
+    const known = !s.setId && findSet(raw);
+    if (known) { s.setId = known.id; continue; }
     if (/\d/.test(t) && /[a-z]/i.test(t)) { set.push(raw); continue; }
     name.push(raw);
   }
-  s.name = name.join(" "); s.set = set.join(" ");
+  s.name = name.join(" "); s.set = s.setId ? "" : set.join(" ");
   return s;
 }
 /* campi -> testo libero */
 function composeText(s) {
   const lang = LANGS.find(l => l[0] === s.lang);
-  return [s.name, s.set, s.num && s.den ? s.num + "/" + s.den : s.num || (s.den && "/" + s.den),
+  return [s.name, s.setId || s.set, s.num && s.den ? s.num + "/" + s.den : s.num || (s.den && "/" + s.den),
     lang && lang[2], FINISH_OUT[s.finish], ...s.stamps.map(x => STAMP.get(x.id).word + x.yr)].filter(Boolean).join(" ");
 }
 
@@ -505,6 +551,10 @@ function buildQuery(s) {
   const chosen = s.stamps.map(x => ({...STAMP.get(x.id), yr: x.yr}));
   const words = tokens.map(t => t + ":*").concat(chosen.filter(x => x.fts).map(x => x.fts));
   if (words.length) p.set("search_vector", "fts(simple)." + words.join("&"));
+  if (s.setId) {
+    const code = '"' + s.setId.toUpperCase() + '"', like = '"' + s.setId.toUpperCase() + '@*"';
+    p.set("or", "(set_code.eq." + code + ",set_code.like." + like + ")");
+  }
   const dated = chosen.find(x => x.release && x.yr);
   if (dated) p.set("release_code", "eq." + dated.release(dated.yr));
   const num = cleanNum(s.num);
@@ -518,7 +568,7 @@ function buildQuery(s) {
   const tagSets = chosen.filter(x => x.tags).map(x => x.tags);
   if (s.finish) tagSets.push(FINISH_TAGS[s.finish]);
   if (tagSets.length) p.set("and", "(" + tagSets.map(tags => "tags.ov.{" + tags.map(t => '"' + t + '"').join(",") + "}").join(",") + ")");
-  const empty = !words.length && !num && !den && !s.lang && !tagSets.length;
+  const empty = !words.length && !s.setId && !num && !den && !s.lang && !tagSets.length;
   p.set("order", "cards(image_url).asc.nullslast,card_id.asc");
   p.set("limit", PAGE);
   return {params: p, empty, tokens};
@@ -615,7 +665,10 @@ function tile(c, onClick) {
   b.type = "button";
   b.title = [c.name, c.set, numberText(c), LANG_LABEL.get(c.lang) || c.lang].filter(Boolean).join(", ");
   const cap = el("span", "cap"), line = el("span");
-  line.append(el("span", "lang", c.lang), document.createTextNode([c.set, numberText(c)].filter(Boolean).join(" ")));
+  line.append(el("span", "lang", c.lang));
+  const meta = SET_BY_CODE.get(c.set);
+  if (meta && meta.symbol) { const im = new Image(); im.className = "sym"; im.alt = ""; im.src = meta.symbol; im.onerror = () => im.remove(); line.append(im); }
+  line.append(document.createTextNode([c.set, numberText(c)].filter(Boolean).join(" ")));
   line.firstChild.style.display = "inline-block";
   cap.append(el("b", "", c.name), line);
   b.append(thumb(c), cap);
@@ -634,6 +687,8 @@ function openCard(c, save) {
   row("Numero", numberText(c));
   row("Lingua", LANG_LABEL.get(c.lang) || c.lang);
   row("Rarità", c.rarity);
+  const meta = SET_BY_CODE.get(c.set);
+  if (meta && meta.logo) { const lg = new Image(); lg.className = "logo"; lg.alt = meta.name; lg.src = meta.logo; lg.onerror = () => lg.remove(); info.append(lg); }
   info.append(title, dl);
   if (c.labels.length) {
     info.append(el("strong", "", c.labels.length === 1 ? "Stampa documentata" : "Stampe documentate"));
@@ -716,7 +771,8 @@ function renderMenu() {
     b.type = "button"; b.dataset.id = x.id;
     b.setAttribute("aria-pressed", stamps.has(x.id));
     text.append(document.createTextNode(x.label), el("small", "", x.note));
-    const glyph = el("span", "glyph"); glyph.innerHTML = icon(x.id);
+    const glyph = el("span", "glyph");
+    if (PHOTO[x.id]) photoGlyph(glyph, x); else glyph.innerHTML = icon(x.id);
     b.append(glyph, text);
     b.addEventListener("click", () => {
       if (stamps.has(x.id)) stamps.delete(x.id);
@@ -733,7 +789,7 @@ function renderMenu() {
   menu.replaceChildren(head, list);
   list.scrollTop = top;
 }
-function openMenu(spot) { menuSpot = spot; menu.hidden = false; renderMenu(); menu.querySelector("li button").focus(); }
+function openMenu(spot) { setMenu.hidden = true; menuSpot = spot; menu.hidden = false; renderMenu(); menu.querySelector("li button").focus(); }
 function closeMenu() {
   if (menu.hidden) return;
   menu.hidden = true;
@@ -748,7 +804,113 @@ document.addEventListener("keydown", e => { if (e.key === "Escape" && !menu.hidd
 document.addEventListener("click", e => { if (!menu.hidden && !menu.contains(e.target)) { menu.hidden = true; } });
 $("reset").addEventListener("click", () => { q.value = ""; writeFields(parseText("")); search(); q.focus(); });
 
+/* ---------- espansioni: simboli veri da TCGdex ---------- */
+let SETS = [];
+const SET_BY_CODE = new Map(), SET_BY_ID = new Map(), SET_BY_ABBR = new Map();
+let setId = "";
+function findSet(raw) {
+  const t = raw.toLowerCase();
+  if (SET_BY_ID.has(t)) return SET_BY_ID.get(t);
+  // le sigle ufficiali (PAL, OBF, BS) solo se scritte in maiuscolo, per non confonderle con parole comuni
+  if (raw.length >= 2 && raw === raw.toUpperCase() && /[A-Z]/.test(raw)) return SET_BY_ABBR.get(raw) || null;
+  return null;
+}
+const setName = x => x.it || x.name;
+function setSymbol(x) {
+  const box = el("span", "set-sym");
+  if (x.symbol) { const im = new Image(); im.alt = ""; im.loading = "lazy"; im.src = x.symbol;
+    im.onerror = () => box.replaceChildren(el("i", "", x.abbr || x.code)); box.append(im); }
+  else box.append(el("i", "", x.abbr || x.code));
+  return box;
+}
+function renderSetPick() {
+  const pick = $("setpick"), x = SET_BY_ID.get(setId);
+  pick.replaceChildren();
+  pick.classList.toggle("filled", !!(x || F.set.value));
+  if (x) {
+    if (x.symbol) { const im = new Image(); im.alt = ""; im.src = x.symbol; im.onerror = () => im.remove(); pick.append(im); }
+    pick.append(el("span", "", setName(x)));
+    pick.title = setName(x) + " (" + x.code + ", " + x.year + "). Cambia";
+  } else if (F.set.value) {
+    pick.append(el("span", "", F.set.value)); pick.title = "Scegli l'espansione dal simbolo";
+  } else {
+    pick.append(el("span", "", "Scegli dal simbolo")); pick.title = "Scegli l'espansione dal simbolo";
+  }
+}
+const setMenu = $("setmenu"), setQ = $("setq"), setGrid = $("setgrid");
+function renderSetGrid() {
+  const words = norm(setQ.value).split(" ").filter(Boolean);
+  const hit = x => words.every(w => norm([x.name, x.it || "", x.id, x.abbr, x.year, x.serie].join(" ")).includes(w));
+  const groups = new Map();
+  for (const x of SETS) if (hit(x)) { if (!groups.has(x.serie)) groups.set(x.serie, []); groups.get(x.serie).push(x); }
+  const out = [];
+  if (setId || F.set.value) {
+    const clear = el("button", "btn", "Togli l'espansione"); clear.type = "button";
+    clear.addEventListener("click", () => { pickSet(""); });
+    const wrap = el("div"); wrap.style.padding = "4px 4px 0"; wrap.append(clear); out.push(wrap);
+  }
+  for (const [serie, list] of groups) {
+    out.push(el("h4", "", serie));
+    const row = el("div", "row");
+    for (const x of list) {
+      const b = el("button"); b.type = "button";
+      b.setAttribute("aria-pressed", x.id === setId);
+      b.title = x.name + (x.it ? " / " + x.it : "") + " · " + x.code + (x.abbr ? " · " + x.abbr : "");
+      b.append(setSymbol(x), el("b", "", setName(x)), el("small", "", (x.abbr || x.code) + " · " + x.year));
+      b.addEventListener("click", () => pickSet(x.id));
+      row.append(b);
+    }
+    out.push(row);
+  }
+  if (!groups.size) out.push(el("p", "hint", SETS.length ? "Nessuna espansione con questo nome. Prova la sigla stampata sulla carta, per esempio PAL." : "Elenco delle espansioni non disponibile."));
+  setGrid.replaceChildren(...out);
+}
+function pickSet(id) {
+  setId = id; F.set.value = "";
+  closeSetMenu(); fieldsChanged();
+}
+function openSetMenu() { closeMenu(); setMenu.hidden = false; setQ.value = ""; renderSetGrid(); setGrid.scrollTop = 0; setQ.focus(); }
+function closeSetMenu() { if (setMenu.hidden) return; setMenu.hidden = true; $("setpick").focus(); }
+$("setpick").addEventListener("click", e => { e.stopPropagation(); setMenu.hidden ? openSetMenu() : closeSetMenu(); });
+$("setdone").addEventListener("click", closeSetMenu);
+setQ.addEventListener("input", e => { e.stopPropagation(); renderSetGrid(); });
+setQ.addEventListener("change", e => e.stopPropagation());
+setQ.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); const first = setGrid.querySelector(".row button"); if (first) first.click(); } });
+setMenu.addEventListener("click", e => e.stopPropagation());
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !setMenu.hidden) { e.preventDefault(); closeSetMenu(); } });
+document.addEventListener("click", () => { setMenu.hidden = true; });
+
+/* ---------- foto vere dei simboli (cartella simboli/) ---------- */
+const PHOTO = {};
+const SPOT_FOCUS = {bl: [18, 52], br: [82, 52], cl: [14, 94], cr: [90, 94]};
+const CARD_RATIO = 88 / 63;
+function photoGlyph(box, x) {
+  const ph = PHOTO[x.id], z = ph.zoom || 4;
+  const [dx, dy] = SPOT_FOCUS[x.spots[0]];
+  const fx = (ph.x ?? dx) / 100, fy = (ph.y ?? dy) / 100, zh = z * CARD_RATIO;
+  const px = Math.min(100, Math.max(0, (fx * z - .5) / (z - 1) * 100));
+  const py = Math.min(100, Math.max(0, (fy * zh - .5) / (zh - 1) * 100));
+  box.classList.add("photo");
+  box.style.backgroundImage = "url(\"simboli/" + encodeURI(ph.file) + "\")";
+  box.style.backgroundSize = z * 100 + "% auto";
+  box.style.backgroundPosition = px.toFixed(1) + "% " + py.toFixed(1) + "%";
+}
+
 renderSpots();
+renderSetPick();
+fetch("espansioni.json").then(r => r.ok ? r.json() : []).then(list => {
+  SETS = Array.isArray(list) ? list : [];
+  for (const x of SETS) {
+    SET_BY_CODE.set(x.code, x); SET_BY_ID.set(x.id.toLowerCase(), x);
+    if (x.abbr && !SET_BY_ABBR.has(x.abbr)) SET_BY_ABBR.set(x.abbr, x);
+  }
+  if (q.value) { writeFields(parseText(q.value)); scheduleSearch(); }
+  renderSetPick();
+}).catch(() => {});
+fetch("simboli/simboli.json").then(r => r.ok ? r.json() : {}).then(map => {
+  for (const [id, ph] of Object.entries(map || {})) if (STAMP.has(id) && ph && typeof ph.file === "string" && !/[\/\\]|\.\./.test(ph.file)) PHOTO[id] = ph;
+  if (!menu.hidden) renderMenu();
+}).catch(() => {});
 memory = loadHistory();
 renderHistory();
 search();
