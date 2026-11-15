@@ -4,7 +4,8 @@ Le voci del menu "+ simbolo", "+ rarità" e "+ sagoma" mostrano la foto di una c
 ingrandita sul punto dov'è il simbolo. Se per un simbolo non c'è una foto, resta l'icona disegnata.
 
 La foto può essere:
-- una **scansione ufficiale** già online (TCGdex o images.pokemontcg.io), indicata con `url`: non serve scaricare niente;
+- una **scansione ufficiale** già online, indicata con `url`: non serve scaricare niente. Sono ammessi
+  TCGdex (`assets.tcgdex.net`), images.pokemontcg.io e TCGplayer (`tcgplayer-cdn.tcgplayer.com`);
 - una **foto tua** salvata in questa cartella, indicata con `file`.
 
 ## Usare una scansione ufficiale
@@ -17,6 +18,12 @@ e aggiungi `/high.webp`:
 ```
 
 `card` è facoltativo: compare come suggerimento passando sopra la foto.
+
+Su TCGplayer ogni stampa speciale (timbrata, Battle Academy, mazzi dei Mondiali, motivi reverse) è un prodotto
+a sé. Il numero del prodotto si trova negli elenchi pubblici di tcgcsv.com
+(`https://tcgcsv.com/tcgplayer/3/<gruppo>/products`); l'immagine è
+`https://tcgplayer-cdn.tcgplayer.com/product/<numero>_in_1000x1000.jpg`.
+Se un'immagine non si carica, la pagina mostra l'icona disegnata.
 
 ## Aggiungere una foto tua
 
@@ -64,3 +71,15 @@ Se `x` e `y` mancano, la pagina usa la posizione tipica di quel simbolo.
 | `ultra` | Due stelle argento |
 | `illus` | Una o due stelle oro |
 | `secret` | Tre stelle oro |
+| `p-cosmos` | Motivo Cosmos |
+| `p-cracked` | Motivo Cracked Ice |
+| `p-tinsel` | Motivo Tinsel |
+| `p-line` | Motivo a linee |
+| `p-pokeball` | Reverse Poké Ball |
+| `p-masterball` | Reverse Master Ball |
+| `p-energy` | Reverse simbolo Energia |
+| `p-dusk` | Reverse Dusk Ball |
+| `p-love` | Reverse Love Ball |
+| `p-friend` | Reverse Friend Ball |
+| `p-quick` | Reverse Quick Ball |
+| `p-rocket` | Reverse Team Rocket |

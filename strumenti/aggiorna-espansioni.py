@@ -7,6 +7,8 @@ Fonti:
 - TCGdex (api.tcgdex.net): elenco, nomi italiani, simboli e loghi.
 - pokemon-tcg-data (GitHub, immagini su images.pokemontcg.io / images.scrydex.com):
   simboli e loghi dei set che TCGdex non ha.
+- TCGplayer tramite tcgcsv.com: per i set che non hanno un simbolo (Trainer Kit,
+  McDonald's, My First Battle...) la scansione di una loro carta, da mostrare al posto del simbolo.
 Nel file ci sono solo gli indirizzi: le immagini restano sui siti d'origine.
 """
 import concurrent.futures as cf
@@ -21,6 +23,21 @@ API = "https://api.tcgdex.net/v2"
 PTCG_SETS = "https://raw.githubusercontent.com/PokemonTCG/pokemon-tcg-data/master/sets/en.json"
 # Alcuni server rifiutano le richieste senza un User-Agent.
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ricercaDB/1.0; +https://github.com/claudio-git-poke/ricercaDB)"}
+TCGCSV = "https://tcgcsv.com/tcgplayer/3"
+TCGP_IMG = "https://tcgplayer-cdn.tcgplayer.com/product/{}_in_1000x1000.jpg"
+# set TCGdex senza simbolo -> gruppo TCGplayer e, per i kit, il Pokémon che dà il nome al mazzo
+NO_SYMBOL_GROUPS = {
+    "30th": (24722, ""), "30th-c": (24837, ""), "mep": (24451, ""), "2024sv": (24163, ""), "2023sv": (23306, ""),
+    "mfb": (23330, "Pikachu"), "jumbo": (1528, ""),
+    "tk-sm-r": (2069, "Raichu"), "tk-sm-l": (2069, "Lycanroc"),
+    "tk-xy-su": (1796, "Suicune"), "tk-xy-p": (1796, "Pikachu"),
+    "tk-xy-latio": (1536, "Latios"), "tk-xy-latia": (1536, "Latias"),
+    "tk-xy-w": (1533, "Wigglytuff"), "tk-xy-b": (1533, "Bisharp"),
+    "tk-xy-sy": (1532, "Sylveon"), "tk-xy-n": (1532, "Noivern"),
+    "tk-bw-z": (1538, "Zoroark"), "tk-bw-e": (1538, "Excadrill"),
+    "tk-hs-r": (1540, "Raichu"), "tk-hs-g": (1540, "Gyarados"),
+    "tk-dp-m": (1541, "Manaphy"), "tk-dp-l": (1541, "Lucario"),
+}
 OUT = pathlib.Path(__file__).resolve().parent.parent / "espansioni.json"
 
 
@@ -125,6 +142,32 @@ def add_ptcg_images(rows):
         list(pool.map(fill, [r for r in rows if not r["symbol"] or not r["logo"]]))
 
 
+def image_ok(url):
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url, headers={**HEADERS, "Range": "bytes=0-15"}), timeout=30) as r:
+            return r.read(3) == b"\xff\xd8\xff"
+    except urllib.error.URLError:
+        return False
+
+
+def add_card_samples(rows):
+    """Per i set senza simbolo, l'indirizzo della scansione di una loro carta su TCGplayer."""
+    cache = {}
+    for r in rows:
+        if r["symbol"] or r["id"] not in NO_SYMBOL_GROUPS:
+            continue
+        group, wanted = NO_SYMBOL_GROUPS[r["id"]]
+        if group not in cache:
+            cache[group] = get(f"{TCGCSV}/{group}/products").get("results", [])
+        cards = [p for p in cache[group] if any(e["name"] == "Number" for e in p.get("extendedData", []))] or cache[group]
+        cards = [p for p in cards if wanted.lower() in p["name"].lower()] or cards
+        for p in cards[:6]:
+            url = TCGP_IMG.format(p["productId"])
+            if image_ok(url):
+                r["card"] = url
+                break
+
+
 def main():
     sets = get(f"{API}/en/sets")
     italian = {s["id"]: s["name"].strip() for s in get(f"{API}/it/sets")}
@@ -136,11 +179,13 @@ def main():
     # TCG Pocket è digitale: il catalogo fisico non lo contiene.
     rows = [r for r in rows if "pocket" not in r["serie"].lower()]
     add_ptcg_images(rows)
+    add_card_samples(rows)
     rows.sort(key=lambda r: (r["date"], r["id"]), reverse=True)
     for r in rows:
         del r["date"]
     OUT.write_text(json.dumps(rows, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(f"{len(rows)} espansioni, {sum(1 for r in rows if r['symbol'])} con simbolo, "
+          f"{sum(1 for r in rows if r.get('card'))} con una carta d'esempio, "
           f"{sum(1 for r in rows if r['logo'])} con logo -> {OUT.name}")
 
 
