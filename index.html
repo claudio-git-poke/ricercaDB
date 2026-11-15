@@ -576,7 +576,7 @@ function composeText(s) {
 /* ---------- interrogazione ---------- */
 function buildQuery(s) {
   const p = new URLSearchParams();
-  p.set("select", "entry_key,card_id,name,set_code,language,collector_number,denominator,label,image_url,verification,cardmarket_url,source_url,set_name:source_payload->set->>name,rarity:source_payload->>rarity,cards(image_url,link_cardmarket)");
+  p.set("select", "entry_key,card_id,name,set_code,language,collector_number,denominator,label,tags,image_url,verification,cardmarket_url,source_url,set_name:source_payload->set->>name,rarity:source_payload->>rarity,tcgp:source_payload->variant->thirdParty->>tcgplayer,cards(image_url,link_cardmarket)");
   const tokens = norm(s.name + " " + s.set).split(" ").filter(Boolean).slice(0, 8);
   const chosen = s.stamps.map(x => ({...STAMP.get(x.id), yr: x.yr}));
   const words = tokens.map(t => t + ":*").concat(chosen.filter(x => x.fts).map(x => x.fts));
@@ -604,20 +604,40 @@ function buildQuery(s) {
   return {params: p, empty, tokens};
 }
 
+/* Foto della stampa precisa: scansione propria, oppure il prodotto TCGplayer di quella stampa
+   (numero già nel catalogo per le carte TCGdex, abbinato in foto-speciali.json per BA, WCD, buste premio...). */
+let SPECIAL = {};
+const TCGP = id => "https://tcgplayer-cdn.tcgplayer.com/product/" + id + "_in_1000x1000.jpg";
+const isSpecial = r => (r.tags || []).some(t => /^(family|stamp|pattern|deck|event):/.test(t));
+function rowImage(r) {
+  if (r.image_url) return r.image_url;
+  const id = /^\d+$/.test(r.tcgp || "") ? r.tcgp : SPECIAL[r.entry_key];
+  return id ? TCGP(id) : "";
+}
 function groupCards(rows, tokens) {
   const byCard = new Map();
   for (const r of rows) {
     let c = byCard.get(r.card_id);
     if (!c) byCard.set(r.card_id, c = {id: r.card_id, name: r.name, set: (r.set_code || "").split("@")[0],
-      setName: "", num: "", den: "", lang: r.language, img: "", market: "", source: "", rarity: "", labels: []});
+      setName: "", num: "", den: "", lang: r.language, img: "", market: "", source: "", rarity: "", labels: [],
+      generic: false, cardImg: "", specialImg: "", genericImg: ""});
+    if (isSpecial(r)) c.specialImg ||= rowImage(r);
+    else { c.generic = true; c.genericImg ||= rowImage(r); }
+    c.cardImg ||= (r.cards && r.cards.image_url) || "";
     c.setName ||= r.set_name || "";
     c.num ||= r.collector_number || "";
     c.den ||= r.denominator || "";
     c.rarity ||= r.rarity || "";
-    c.img ||= r.image_url || (r.cards && r.cards.image_url) || "";
     c.market ||= r.cardmarket_url || (r.cards && r.cards.link_cardmarket) || "";
     c.source ||= r.source_url || "";
     if (r.verification !== "catalog" && r.label && !c.labels.includes(r.label)) c.labels.push(r.label);
+  }
+  /* se nei risultati c'è la carta normale si mostra quella; se ci sono solo stampe speciali, la loro foto */
+  for (const c of byCard.values()) {
+    const list = c.generic ? [c.genericImg, c.cardImg, c.specialImg] : [c.specialImg, c.genericImg, c.cardImg];
+    c.imgs = [...new Set(list.filter(Boolean))];
+    c.img = c.imgs[0] || "";
+    delete c.generic; delete c.cardImg; delete c.specialImg; delete c.genericImg;
   }
   const first = tokens[0] || "";
   const rank = c => (c.img ? 2 : 0) + (first && norm(c.name).startsWith(first) ? 1 : 0);
@@ -670,7 +690,8 @@ function showMessage(title, text) {
 }
 
 /* ---------- carte a schermo ---------- */
-const thumbUrl = url => /assets\.tcgdex\.net/.test(url) ? url.replace(/\/high\.(png|webp|jpg)$/, "/low.webp") : url;
+const thumbUrl = url => /assets\.tcgdex\.net/.test(url) ? url.replace(/\/high\.(png|webp|jpg)$/, "/low.webp")
+  : /tcgplayer-cdn\.tcgplayer\.com/.test(url) ? url.replace("_in_1000x1000.jpg", "_200w.jpg") : url;
 const numberText = c => c.num ? (c.num + (c.den ? "/" + c.den : "")) : "";
 
 function thumb(c, large) {
@@ -680,12 +701,14 @@ function thumb(c, large) {
     i.append(el("span", "", c.name), el("small", "", [c.set, numberText(c)].filter(Boolean).join(" ")));
     b.append(i); box.replaceChildren(b);
   };
-  if (c.img) {
+  const list = (c.imgs && c.imgs.length ? c.imgs : [c.img]).filter(Boolean);
+  if (list.length) {
     const img = new Image();
+    let k = 0;
     img.loading = "lazy"; img.decoding = "async"; img.alt = "";
     img.referrerPolicy = "no-referrer";
-    img.onerror = blank;
-    img.src = large ? c.img : thumbUrl(c.img);
+    img.onerror = () => { k++; if (k < list.length) img.src = large ? list[k] : thumbUrl(list[k]); else blank(); };
+    img.src = large ? list[0] : thumbUrl(list[0]);
     box.append(img);
   } else blank();
   return box;
@@ -951,6 +974,10 @@ fetch("espansioni.json").then(r => r.ok ? r.json() : []).then(list => {
   }
   if (q.value) { writeFields(parseText(q.value)); scheduleSearch(); }
   renderSetPick();
+}).catch(() => {});
+fetch("foto-speciali.json").then(r => r.ok ? r.json() : {}).then(map => {
+  if (map && typeof map === "object") SPECIAL = map;
+  if (q.value || F.name.value) scheduleSearch();
 }).catch(() => {});
 fetch("simboli/simboli.json").then(r => r.ok ? r.json() : {}).then(map => {
   /* foto locali (solo nome del file) o scansioni ufficiali dai siti già usati per le carte */
