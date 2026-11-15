@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ricerca carte Pokémon</title>
+<meta name="description" content="Cerca una carta nel catalogo: scrivi quello che vedi o compila i campi sulla carta.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --mat:#dfe6ec;        /* tappetino da gioco */
+  --pocket:#c9d4de;     /* tasca del raccoglitore */
+  --ink:#1b2430;
+  --ink-soft:#56636f;
+  --paper:#f8f4e4;      /* interno carta */
+  --yellow:#f3c932;     /* bordo carta */
+  --yellow-deep:#c99a12;
+  --red:#cf3527;        /* energia fuoco: selezione e focus */
+  --white:#fff;
+  --radius-card:4.2% / 3%;
+  font-family:"Gill Sans","Gill Sans MT","Cabin",system-ui,sans-serif;
+  color:var(--ink);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--mat);font-size:16px;line-height:1.35}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- struttura ---------- */
+.app{display:grid;gap:14px;padding:14px;min-height:100%;
+  grid-template-columns:minmax(0,1fr);
+  grid-template-areas:"text" "anatomy" "results" "history"}
+.zone-text{grid-area:text}
+.zone-anatomy{grid-area:anatomy}
+.zone-results{grid-area:results;min-height:320px;max-height:78dvh}
+.zone-history{grid-area:history}
+@media (min-width:920px){
+  body{overflow:hidden}
+  .app{height:100dvh;padding:16px 20px;gap:14px 20px;
+    grid-template-columns:clamp(280px,27vw,360px) minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr) auto;
+    grid-template-areas:"text text" "anatomy results" "history history"}
+  .zone-anatomy{overflow:auto;align-self:start;max-height:100%}
+  .zone-results{min-height:0;max-height:none}
+}
+h2{font-size:1rem;font-weight:600;margin:0}
+
+/* ---------- 1) testo ---------- */
+.zone-text{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.zone-text h1{font-size:1.25rem;font-weight:700;margin:0;letter-spacing:-.01em}
+.textbox{flex:1 1 320px;display:flex;align-items:center;background:var(--white);
+  border:2px solid var(--ink);border-radius:999px;padding:0 6px 0 18px}
+.textbox:focus-within{border-color:var(--red)}
+.textbox input{flex:1;min-width:0;border:0;background:none;padding:11px 0;font-size:1.06rem;outline:none}
+.textbox input::placeholder{color:#8b96a0}
+.ghost{border:0;background:none;padding:8px 12px;border-radius:999px;color:var(--ink-soft);font-weight:600}
+.ghost:hover{background:var(--mat);color:var(--ink)}
+
+/* ---------- 2) anatomia ---------- */
+.anatomy-hint{margin:0 0 8px;color:var(--ink-soft);font-size:.92rem}
+.card-form{aspect-ratio:63/88;width:100%;max-width:360px;margin:0 auto;
+  background:var(--yellow);border-radius:var(--radius-card);padding:4.5%;
+  box-shadow:0 1px 0 var(--yellow-deep),0 10px 24px -12px rgba(27,36,48,.55);
+  display:flex}
+.card-inner{flex:1;background:var(--paper);border-radius:2.5% / 1.8%;padding:4% 4.5%;
+  display:grid;grid-template-rows:auto minmax(0,1.25fr) minmax(0,1fr) auto;gap:3%;min-height:0}
+.field{display:flex;flex-direction:column;gap:2px;min-width:0}
+.field label,.field .lab{font-size:.74rem;font-weight:600;color:var(--ink-soft)}
+.field input,.field select{width:100%;min-width:0;background:var(--white);border:1.5px solid #b9b08f;
+  border-radius:5px;padding:5px 7px;font-size:.98rem}
+.field input:focus,.field select:focus{border-color:var(--red);outline:none;box-shadow:0 0 0 2px rgba(207,53,39,.2)}
+.field.filled input,.field.filled select{border-color:var(--ink);font-weight:600}
+.f-name input{font-size:1.12rem;font-weight:700}
+.art{border:3px solid #a9a184;border-radius:3px;min-height:0;
+  background:
+    repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 10px,rgba(255,255,255,0) 10px 22px),
+    linear-gradient(160deg,#bcd3e4,#e6d7ee 55%,#f6e7b8);
+  display:flex;flex-direction:column;justify-content:flex-end;padding:6px}
+.art .lab{background:rgba(248,244,228,.92);align-self:flex-start;padding:1px 6px;border-radius:4px 4px 0 0}
+.chips{display:flex;flex-wrap:wrap;gap:4px;background:rgba(248,244,228,.92);padding:5px;border-radius:0 5px 5px 5px}
+.chips label{position:relative}
+.chips input{position:absolute;opacity:0;inset:0}
+.chips span{display:block;padding:3px 9px;border:1.5px solid #b9b08f;border-radius:999px;background:var(--white);font-size:.86rem}
+.chips input:checked+span{background:var(--ink);border-color:var(--ink);color:var(--white);font-weight:600}
+.chips input:focus-visible+span{outline:3px solid var(--red);outline-offset:1px}
+.textarea-zone{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-height:0;overflow:hidden}
+.lines{flex:1;min-height:8px;opacity:.5;
+  background:repeating-linear-gradient(180deg,#b9b08f 0 2px,transparent 2px 14px)}
+.foot{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:8px;align-items:end}
+.numrow{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:4px;align-items:center}
+.numrow b{font-size:1.1rem}
+.numrow input{text-align:center}
+
+/* ---------- 3) anteprima ---------- */
+.zone-results{display:flex;flex-direction:column;background:var(--pocket);border-radius:14px;overflow:hidden}
+.results-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 14px 8px}
+#count{color:var(--ink-soft);font-size:.92rem;text-align:right}
+#count.busy::after{content:" …"}
+.grid{flex:1;overflow:auto;padding:4px 14px 16px;display:grid;gap:12px;align-content:start;
+  grid-template-columns:repeat(auto-fill,minmax(118px,1fr))}
+.tile{border:0;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:5px;min-width:0}
+.thumb{aspect-ratio:63/88;width:100%;border-radius:var(--radius-card);overflow:hidden;background:#aebccb;
+  box-shadow:0 4px 10px -6px rgba(27,36,48,.7);position:relative;display:block}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.tile:hover .thumb,.tile:focus-visible .thumb{transform:translateY(-3px);transition:transform .12s}
+.blank{position:absolute;inset:0;background:var(--yellow);padding:7%;display:flex}
+.blank i{flex:1;background:var(--paper);border-radius:3%;display:flex;flex-direction:column;justify-content:space-between;
+  padding:8%;font-style:normal;font-size:.78rem;font-weight:700;overflow:hidden;overflow-wrap:anywhere}
+.blank small{font-weight:500;color:var(--ink-soft)}
+.cap{font-size:.86rem;line-height:1.2;min-width:0}
+.cap b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cap span{color:var(--ink-soft);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lang{display:inline-block;background:var(--ink);color:var(--white);border-radius:3px;padding:0 4px;font-size:.72rem;font-weight:600;margin-right:4px}
+.message{grid-column:1/-1;padding:28px 8px;color:var(--ink-soft);max-width:46ch}
+.message strong{display:block;color:var(--ink);font-size:1.1rem;margin-bottom:4px}
+
+/* ---------- 4) ultimi inserimenti ---------- */
+.zone-history{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center}
+.strip{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 6px;min-height:76px;align-items:center}
+.strip .tile{flex:0 0 46px}
+.strip .thumb{box-shadow:0 2px 6px -3px rgba(27,36,48,.7)}
+.strip .blank i{font-size:.42rem;padding:6%}
+.strip .empty{color:var(--ink-soft);font-size:.92rem}
+
+/* ---------- scheda ---------- */
+dialog{border:0;border-radius:16px;padding:0;max-width:min(680px,94vw);width:100%;color:var(--ink);background:var(--white)}
+dialog::backdrop{background:rgba(27,36,48,.6)}
+.sheet{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:20px;padding:20px}
+@media (max-width:560px){.sheet{grid-template-columns:1fr}.sheet .thumb{max-width:200px;margin:0 auto}}
+.sheet h3{font-size:1.5rem;margin:0 0 2px;line-height:1.15}
+.sheet dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:14px 0}
+.sheet dt{color:var(--ink-soft)}
+.sheet dd{margin:0;font-weight:600}
+.sheet ul{margin:4px 0 14px;padding-left:18px}
+.sheet li{margin:2px 0}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{border:2px solid var(--ink);background:var(--white);border-radius:999px;padding:7px 14px;font-weight:600;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--white)}
+.saved{color:var(--ink-soft);font-size:.9rem;margin:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main class="app">
+
+  <!-- 1) inserimento testuale -->
+  <section class="zone-text" aria-label="Ricerca testuale">
+    <h1>Ricerca carte</h1>
+    <div class="textbox">
+      <label class="sr" for="q">Scrivi quello che sai della carta</label>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" autofocus
+             placeholder="Scrivi quello che vedi: charizard 4/102 base1 holo">
+      <button class="ghost" id="reset" type="button">Azzera</button>
+    </div>
+  </section>
+
+  <!-- 2) anatomia della carta -->
+  <section class="zone-anatomy" aria-label="Anatomia della carta">
+    <p class="anatomy-hint">Oppure compila i campi dove li trovi sulla carta.</p>
+    <form class="card-form" id="form" autocomplete="off" onsubmit="return false">
+      <div class="card-inner">
+        <div class="field f-name">
+          <label for="f-name">Nome</label>
+          <input id="f-name" name="name" placeholder="Charizard">
+        </div>
+
+        <div class="art">
+          <span class="lab">Luccica?</span>
+          <div class="chips" role="radiogroup" aria-label="Finitura">
+            <label><input type="radio" name="finish" value="" checked><span>Non so</span></label>
+            <label><input type="radio" name="finish" value="normal"><span>No</span></label>
+            <label><input type="radio" name="finish" value="holo"><span>Holo</span></label>
+            <label><input type="radio" name="finish" value="reverse"><span>Reverse</span></label>
+          </div>
+        </div>
+
+        <div class="textarea-zone">
+          <div class="lines" aria-hidden="true"></div>
+          <div class="field">
+            <label for="f-lang">Lingua del testo</label>
+            <select id="f-lang" name="lang"></select>
+          </div>
+        </div>
+
+        <div class="foot">
+          <div class="field">
+            <label for="f-set">Espansione</label>
+            <input id="f-set" name="set" placeholder="base1 o Base Set">
+          </div>
+          <div class="field">
+            <span class="lab">Numero</span>
+            <div class="numrow">
+              <input id="f-num" name="num" aria-label="Numero della carta" placeholder="4" inputmode="text">
+              <b>/</b>
+              <input id="f-den" name="den" aria-label="Totale dell'espansione" placeholder="102" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <!-- 3) anteprima -->
+  <section class="zone-results" aria-label="Carte trovate">
+    <div class="results-head">
+      <h2>Carte che corrispondono</h2>
+      <span id="count" role="status" aria-live="polite"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- 4) ultimi inserimenti -->
+  <section class="zone-history" aria-label="Ultimi inserimenti">
+    <h2>Ultimi inserimenti</h2>
+    <div class="strip" id="strip"></div>
+    <button class="ghost" id="clear" type="button">Svuota</button>
+  </section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlg-title"></dialog>
+
+<script>
+"use strict";
+/* ---------- configurazione ---------- */
+const API = "https://vjpvbsvpumzrqzoupxee.supabase.co/rest/v1";
+// Chiave pubblica di sola lettura (ruolo anon).
+const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHZic3ZwdW16cnF6b3VweGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzMzNTQsImV4cCI6MjExMDE0OTM1NH0.PTxmaA8_5CyPz8tZclfgoRT2DexYvhCQg1hPn5azpGw";
+const PAGE = 200;            // stampe lette per ricerca
+const HISTORY_KEY = "ricercadb.ultimi";
+const HISTORY_MAX = 60;
+
+const LANGS = [
+  ["INT","Inglese","eng",["en","eng","inglese","int"]],
+  ["IT","Italiano","ita",["it","ita","italiano"]],
+  ["FR","Francese","fra",["fr","fra","francese"]],
+  ["DE","Tedesco","ted",["ted","tedesco","deu"]],
+  ["ES","Spagnolo","spa",["spa","spagnolo"]],
+  ["PT","Portoghese","por",["pt","por","portoghese"]],
+  ["JP","Giapponese","jap",["jp","jap","jpn","giapponese"]],
+  ["KOR","Coreano","kor",["kr","kor","coreano"]],
+  ["CHN-T","Cinese tradizionale","chn-t",["chn-t"]],
+  ["CHN","Cinese semplificato","chn",["chn"]],
+  ["ID","Indonesiano","indonesiano",["indonesiano"]],
+  ["TH","Thailandese","thai",["thai","thailandese"]],
+  ["ES-LA","Spagnolo latinoamericano","es-la",["es-la"]],
+];
+const LANG_WORD = new Map(LANGS.flatMap(l => l[3].map(w => [w, l[0]])));
+const LANG_LABEL = new Map(LANGS.map(l => [l[0], l[1]]));
+LANG_LABEL.set("EN", "Inglese");
+const FINISH_WORD = new Map([["holo","holo"],["olografica","holo"],["olografico","holo"],["foil","holo"],
+  ["reverse","reverse"],["normale","normal"]]);
+const FINISH_TAGS = {
+  holo: ["finish:holo","finish:Olografica"],
+  reverse: ["finish:reverse","finish:Reverse"],
+  normal: ["finish:normal","finish:Normale"],
+};
+const FINISH_OUT = {holo:"holo", reverse:"reverse", normal:"normale"};
+
+/* ---------- elementi ---------- */
+const $ = id => document.getElementById(id);
+const q = $("q"), form = $("form"), grid = $("grid"), count = $("count"), strip = $("strip"), dlg = $("dlg");
+const F = {name: $("f-name"), set: $("f-set"), num: $("f-num"), den: $("f-den"), lang: $("f-lang")};
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+F.lang.append(new Option("Non so", ""));
+for (const [code, label] of LANGS) F.lang.append(new Option(label, code));
+
+/* ---------- stato della ricerca ---------- */
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+  .replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+const cleanNum = s => s.trim().toLowerCase().split("/")[0].replace(/[^a-z0-9]/g, "").replace(/^0+(?=\d)/, "");
+
+function readFields() {
+  return {
+    name: F.name.value.trim(), set: F.set.value.trim(),
+    num: F.num.value.trim(), den: F.den.value.trim(),
+    lang: F.lang.value, finish: form.elements.finish.value,
+  };
+}
+function writeFields(s) {
+  F.name.value = s.name; F.set.value = s.set; F.num.value = s.num; F.den.value = s.den;
+  F.lang.value = s.lang;
+  for (const r of form.elements.finish) r.checked = r.value === s.finish;
+  markFilled();
+}
+function markFilled() {
+  for (const input of Object.values(F)) input.closest(".field").classList.toggle("filled", !!input.value);
+}
+
+/* testo libero -> campi */
+function parseText(text) {
+  const s = {name: "", set: "", num: "", den: "", lang: "", finish: ""};
+  let rest = text;
+  const slash = rest.match(/([a-z]*\d+[a-z]*)\s*\/\s*(\d+)/i);
+  if (slash) { s.num = slash[1]; s.den = slash[2]; rest = rest.replace(slash[0], " "); }
+  const name = [], set = [];
+  for (const raw of rest.split(/\s+/).filter(Boolean)) {
+    const t = raw.toLowerCase();
+    if (!s.lang && LANG_WORD.has(t)) { s.lang = LANG_WORD.get(t); continue; }
+    if (!s.finish && FINISH_WORD.has(t)) { s.finish = FINISH_WORD.get(t); continue; }
+    if (!s.num && /^\d{1,3}[a-z]?$/i.test(t)) { s.num = raw; continue; }
+    if (/\d/.test(t) && /[a-z]/i.test(t)) { set.push(raw); continue; }
+    name.push(raw);
+  }
+  s.name = name.join(" "); s.set = set.join(" ");
+  return s;
+}
+/* campi -> testo libero */
+function composeText(s) {
+  const lang = LANGS.find(l => l[0] === s.lang);
+  return [s.name, s.set, s.num && s.den ? s.num + "/" + s.den : s.num || (s.den && "/" + s.den),
+    lang && lang[2], FINISH_OUT[s.finish]].filter(Boolean).join(" ");
+}
+
+/* ---------- interrogazione ---------- */
+function buildQuery(s) {
+  const p = new URLSearchParams();
+  p.set("select", "entry_key,card_id,name,set_code,language,collector_number,denominator,label,image_url,verification,cardmarket_url,source_url,set_name:source_payload->set->>name,rarity:source_payload->>rarity,cards(image_url,link_cardmarket)");
+  const tokens = norm(s.name + " " + s.set).split(" ").filter(Boolean).slice(0, 8);
+  if (tokens.length) p.set("search_vector", "fts(simple)." + tokens.map(t => t + ":*").join("&"));
+  const num = cleanNum(s.num);
+  if (num) p.set("collector_number", "eq." + num);
+  const den = s.den.replace(/\D/g, "");
+  if (den) {
+    const bare = den.replace(/^0+(?=\d)/, "");
+    p.set("denominator", "in.(" + [...new Set([den, bare, bare.padStart(3, "0")])].join(",") + ")");
+  }
+  if (s.lang) p.set("language", s.lang === "INT" ? "in.(INT,EN)" : "eq." + s.lang);
+  if (s.finish) p.set("tags", "ov.{" + FINISH_TAGS[s.finish].join(",") + "}");
+  const empty = !tokens.length && !num && !den && !s.lang && !s.finish;
+  p.set("order", "cards(image_url).asc.nullslast,card_id.asc");
+  p.set("limit", PAGE);
+  return {params: p, empty, tokens};
+}
+
+function groupCards(rows, tokens) {
+  const byCard = new Map();
+  for (const r of rows) {
+    let c = byCard.get(r.card_id);
+    if (!c) byCard.set(r.card_id, c = {id: r.card_id, name: r.name, set: (r.set_code || "").split("@")[0],
+      setName: "", num: "", den: "", lang: r.language, img: "", market: "", source: "", rarity: "", labels: []});
+    c.setName ||= r.set_name || "";
+    c.num ||= r.collector_number || "";
+    c.den ||= r.denominator || "";
+    c.rarity ||= r.rarity || "";
+    c.img ||= r.image_url || (r.cards && r.cards.image_url) || "";
+    c.market ||= r.cardmarket_url || (r.cards && r.cards.link_cardmarket) || "";
+    c.source ||= r.source_url || "";
+    if (r.verification !== "catalog" && r.label && !c.labels.includes(r.label)) c.labels.push(r.label);
+  }
+  const first = tokens[0] || "";
+  const rank = c => (c.img ? 2 : 0) + (first && norm(c.name).startsWith(first) ? 1 : 0);
+  return [...byCard.values()].map((c, i) => [c, i]).sort((a, b) => rank(b[0]) - rank(a[0]) || a[1] - b[1]).map(x => x[0]);
+}
+
+let controller = null, timer = 0;
+function scheduleSearch() { clearTimeout(timer); timer = setTimeout(search, 220); }
+
+async function search() {
+  const state = readFields();
+  const {params, empty, tokens} = buildQuery(state);
+  if (controller) controller.abort();
+  if (empty) {
+    count.textContent = ""; count.classList.remove("busy");
+    return showMessage("Inizia da quello che vedi", "Scrivi un nome, un numero come 4/102 o la sigla dell'espansione. Le carte compaiono qui mentre scrivi.");
+  }
+  controller = new AbortController();
+  count.classList.add("busy");
+  try {
+    const res = await fetch(API + "/catalog_search_entries?" + params, {
+      signal: controller.signal, headers: {apikey: KEY, Authorization: "Bearer " + KEY}});
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.code === "57014" ? "timeout" : "http");
+    }
+    const rows = await res.json();
+    const cards = groupCards(rows, tokens);
+    count.classList.remove("busy");
+    if (!cards.length) {
+      count.textContent = "Nessuna carta";
+      return showMessage("Nessuna carta con questi dati", "Togli un campo o controlla il numero: il totale dopo la barra non è registrato per tutte le carte.");
+    }
+    const full = rows.length >= PAGE;
+    count.textContent = (full ? "Prime " : "") + cards.length + (cards.length === 1 ? " carta" : " carte") +
+      (full ? ". Aggiungi un dettaglio per restringere" : "");
+    grid.replaceChildren(...cards.map(c => tile(c, () => openCard(c, true))));
+    grid.scrollTop = 0;
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    count.classList.remove("busy"); count.textContent = "";
+    if (err.message === "timeout") showMessage("Ricerca troppo ampia", "Il catalogo non ha risposto in tempo. Aggiungi un altro dettaglio, per esempio il nome o l'espansione.");
+    else showMessage("Catalogo non raggiungibile", "Controlla la connessione e riprova: basta modificare un campo.");
+  }
+}
+function showMessage(title, text) {
+  const box = el("div", "message");
+  box.append(el("strong", "", title), document.createTextNode(text));
+  grid.replaceChildren(box);
+}
+
+/* ---------- carte a schermo ---------- */
+const thumbUrl = url => /assets\.tcgdex\.net/.test(url) ? url.replace(/\/high\.(png|webp|jpg)$/, "/low.webp") : url;
+const numberText = c => c.num ? (c.num + (c.den ? "/" + c.den : "")) : "";
+
+function thumb(c, large) {
+  const box = el("span", "thumb");
+  const blank = () => {
+    const b = el("span", "blank"), i = el("i");
+    i.append(el("span", "", c.name), el("small", "", [c.set, numberText(c)].filter(Boolean).join(" ")));
+    b.append(i); box.replaceChildren(b);
+  };
+  if (c.img) {
+    const img = new Image();
+    img.loading = "lazy"; img.decoding = "async"; img.alt = "";
+    img.referrerPolicy = "no-referrer";
+    img.onerror = blank;
+    img.src = large ? c.img : thumbUrl(c.img);
+    box.append(img);
+  } else blank();
+  return box;
+}
+function tile(c, onClick) {
+  const b = el("button", "tile");
+  b.type = "button";
+  b.title = [c.name, c.set, numberText(c), LANG_LABEL.get(c.lang) || c.lang].filter(Boolean).join(", ");
+  const cap = el("span", "cap"), line = el("span");
+  line.append(el("span", "lang", c.lang), document.createTextNode([c.set, numberText(c)].filter(Boolean).join(" ")));
+  line.firstChild.style.display = "inline-block";
+  cap.append(el("b", "", c.name), line);
+  b.append(thumb(c), cap);
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+/* ---------- scheda carta ---------- */
+function openCard(c, save) {
+  if (save) remember(c);
+  const sheet = el("div", "sheet"), info = el("div");
+  const title = el("h3", "", c.name); title.id = "dlg-title";
+  const dl = el("dl");
+  const row = (k, v) => { if (v) dl.append(el("dt", "", k), el("dd", "", v)); };
+  row("Espansione", [c.setName, c.set].filter(Boolean).join(" · "));
+  row("Numero", numberText(c));
+  row("Lingua", LANG_LABEL.get(c.lang) || c.lang);
+  row("Rarità", c.rarity);
+  info.append(title, dl);
+  if (c.labels.length) {
+    info.append(el("strong", "", c.labels.length === 1 ? "Stampa documentata" : "Stampe documentate"));
+    const ul = el("ul");
+    for (const l of c.labels.slice(0, 12)) ul.append(el("li", "", l));
+    info.append(ul);
+  }
+  info.append(el("p", "saved", "Salvata negli ultimi inserimenti."));
+  const actions = el("div", "actions");
+  const link = (href, text) => { const a = el("a", "btn", text); a.href = href; a.target = "_blank"; a.rel = "noopener"; return a; };
+  if (/^https:\/\/www\.cardmarket\.com\//.test(c.market)) actions.append(link(c.market, "Apri su Cardmarket"));
+  const remove = el("button", "btn", "Togli dagli ultimi"); remove.type = "button";
+  remove.addEventListener("click", () => { forget(c.id); dlg.close(); });
+  const close = el("button", "btn primary", "Chiudi"); close.type = "button";
+  close.addEventListener("click", () => dlg.close());
+  actions.append(remove, close);
+  info.append(actions);
+  sheet.append(thumb(c, true), info);
+  dlg.replaceChildren(sheet);
+  dlg.showModal();
+  close.focus();
+}
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+
+/* ---------- ultimi inserimenti ---------- */
+let memory = [];
+function loadHistory() {
+  try { const v = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); return Array.isArray(v) ? v.filter(c => c && c.id && c.name) : []; }
+  catch { return []; }
+}
+function saveHistory() { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(memory)); } catch { /* resta in memoria */ } }
+function remember(c) {
+  memory = [{...c, labels: c.labels.slice(0, 12), t: Date.now()}, ...memory.filter(x => x.id !== c.id)].slice(0, HISTORY_MAX);
+  saveHistory(); renderHistory();
+}
+function forget(id) { memory = memory.filter(x => x.id !== id); saveHistory(); renderHistory(); }
+function renderHistory() {
+  $("clear").hidden = !memory.length;
+  if (!memory.length) return strip.replaceChildren(el("span", "empty", "Le carte che apri restano qui, così le ritrovi la prossima volta."));
+  strip.replaceChildren(...memory.map(c => {
+    const t = tile({...c, labels: c.labels || []}, () => openCard({...c, labels: c.labels || []}, true));
+    t.querySelector(".cap").remove();
+    return t;
+  }));
+  strip.scrollLeft = 0;
+}
+$("clear").addEventListener("click", () => {
+  if (confirm("Svuotare gli ultimi inserimenti?")) { memory = []; saveHistory(); renderHistory(); }
+});
+
+/* ---------- collegamento testo <-> anatomia ---------- */
+q.addEventListener("input", () => { writeFields(parseText(q.value)); scheduleSearch(); });
+form.addEventListener("input", () => { q.value = composeText(readFields()); markFilled(); scheduleSearch(); });
+form.addEventListener("change", () => { q.value = composeText(readFields()); markFilled(); scheduleSearch(); });
+$("reset").addEventListener("click", () => { q.value = ""; writeFields(parseText("")); search(); q.focus(); });
+
+memory = loadHistory();
+renderHistory();
+search();
+</script>
+</body>
+</html>
