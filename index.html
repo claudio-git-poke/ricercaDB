@@ -382,9 +382,9 @@ dialog::backdrop{background:rgba(27,36,48,.6)}
 <script>
 "use strict";
 /* ---------- configurazione ---------- */
-const API = "https://vjpvbsvpumzrqzoupxee.supabase.co/rest/v1";
-// Chiave pubblica di sola lettura (ruolo anon).
-const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHZic3ZwdW16cnF6b3VweGVlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzMzNTQsImV4cCI6MjExMDE0OTM1NH0.PTxmaA8_5CyPz8tZclfgoRT2DexYvhCQg1hPn5azpGw";
+const API = "https://pokemon-catalog-zeta.vercel.app/api/catalog-db/rest/v1";
+// Il catalogo è su Turso: le letture passano dall'API pubblica del sito, che non richiede chiavi.
+const KEY = "catalog-public";
 const PAGE = 200;            // stampe lette per ricerca
 const HISTORY_KEY = "ricercadb.ultimi";
 const HISTORY_MAX = 60;

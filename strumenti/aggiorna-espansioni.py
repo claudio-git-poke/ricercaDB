@@ -37,10 +37,9 @@ TCGDEX_LANGS = ["en", "it", "fr", "de", "es", "pt", "ja", "ko", "zh-tw", "zh-cn"
 LIMITLESS = {"en": "https://limitlesstcg.com/cards", "jp": "https://limitlesstcg.com/cards/jp"}
 TCGCSV = "https://tcgcsv.com/tcgplayer/3"
 TCGP_IMG = "https://tcgplayer-cdn.tcgplayer.com/product/{}_in_1000x1000.jpg"
-# Stessi indirizzo e chiave pubblica (sola lettura) di index.html.
-CATALOG = "https://vjpvbsvpumzrqzoupxee.supabase.co/rest/v1"
-CATALOG_KEY = ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHZic3ZwdW16cnF6b3VweGVlIiwicm9sZSI6"
-               "ImFub24iLCJpYXQiOjE3OTQ1NzMzNTQsImV4cCI6MjExMDE0OTM1NH0.PTxmaA8_5CyPz8tZclfgoRT2DexYvhCQg1hPn5azpGw")
+# Stesso indirizzo di index.html: API pubblica in sola lettura del catalogo (Turso), senza chiavi.
+CATALOG = "https://pokemon-catalog-zeta.vercel.app/api/catalog-db/rest/v1"
+CATALOG_KEY = "catalog-public"
 CATALOG_HEADERS = {**HEADERS, "apikey": CATALOG_KEY, "Authorization": "Bearer " + CATALOG_KEY}
 # Fonti dell'archivio dalla più nitida alla meno nitida (TCGdex spesso ha simboli di 25 pixel).
 SOURCE_RANK = ["PokemonSymbols", "Xero_Community", "1niceroli_AssetRepo", "SilphGhost", "PokemonTCG_Storico", "TCGdex", "DexTCG"]
