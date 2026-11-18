@@ -21,10 +21,9 @@ OUT = ROOT / "foto-speciali.json"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ricercaDB/1.0; +https://github.com/claudio-git-poke/ricercaDB)"}
 TCGCSV = "https://tcgcsv.com/tcgplayer/3/{}/products"
 
-# Stessi indirizzo e chiave pubblica (sola lettura) di index.html.
-API = "https://vjpvbsvpumzrqzoupxee.supabase.co/rest/v1/catalog_search_entries"
-KEY = ("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZqcHZic3ZwdW16cnF6b3VweGVlIiwicm9sZSI6"
-       "ImFub24iLCJpYXQiOjE3OTQ1NzMzNTQsImV4cCI6MjExMDE0OTM1NH0.PTxmaA8_5CyPz8tZclfgoRT2DexYvhCQg1hPn5azpGw")
+# Stesso indirizzo di index.html: API pubblica in sola lettura del catalogo (Turso), senza chiavi.
+API = "https://pokemon-catalog-zeta.vercel.app/api/catalog-db/rest/v1/catalog_search_entries"
+KEY = "catalog-public"
 
 BA_GROUPS = {2020: 2686, 2022: 3051, 2024: 23520}
 TT_GROUPS = {2022: 3179, 2023: 23266, 2024: 23561}

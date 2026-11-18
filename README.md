@@ -9,7 +9,7 @@ Una sola schermata, quattro zone:
 3. **Carte che corrispondono**: si aggiorna a ogni modifica. Per le stampe speciali (Battle Academy, mazzi dei Mondiali, buste premio, Trick or Trade, My First Battle, promo timbrate) mostra la scansione TCGplayer di quella stampa, non quella della carta normale.
 4. **Ultimi inserimenti**: le carte aperte, salvate nel browser.
 
-È un unico file statico, `index.html`, senza build. Legge in sola lettura la tabella `catalog_search_entries` del database Supabase del catalogo con la chiave pubblica (ruolo anon).
+È un unico file statico, `index.html`, senza build. Legge in sola lettura la tabella `catalog_search_entries` del catalogo tramite l'API pubblica del sito (`https://pokemon-catalog-zeta.vercel.app/api/catalog-db/rest/v1`), che dal 18 novembre 2026 serve i dati dal database Turso e non richiede chiavi.
 
 ## File
 
